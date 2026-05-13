@@ -37,3 +37,30 @@ def test_rainier_pflichtpruefungen():
     # Last step is incomplete → flagged
     letzte = next(p for p in result.pflichtpruefungen if p.name == "letzte_stufe")
     assert not letzte.ok
+
+
+def test_sarah_snapshot():
+    """Sarah Seckendorf 23.05.2024 — last step complete, v_max=13.0."""
+    test_run = io_input.parse_input(FIXTURES / "sarah.xlsx")
+    result = protocols.analyze(test_run)
+    actual = json.loads(json.dumps(asdict(result), default=str))
+    expected = json.loads((FIXTURES / "sarah_expected.json").read_text())
+
+    assert abs(actual["v_max"] - 13.0) < 0.01
+
+    for a_row, e_row in zip(actual["intersections"], expected["intersections"]):
+        if a_row["intensitaet"] is not None and e_row["intensitaet"] is not None:
+            assert abs(float(a_row["intensitaet"]) - float(e_row["intensitaet"])) < 0.05, \
+                f"lak={a_row['laktat']}: v mismatch {a_row['intensitaet']} vs {e_row['intensitaet']}"
+
+
+def test_sarah_pflichtpruefungen():
+    """Sarah's test is fully complete — all pflichtpruefungen should pass."""
+    test_run = io_input.parse_input(FIXTURES / "sarah.xlsx")
+    result = protocols.analyze(test_run)
+
+    letzte = next(p for p in result.pflichtpruefungen if p.name == "letzte_stufe")
+    assert letzte.ok, "Last step is complete, should not be flagged"
+
+    ausbelastung = next(p for p in result.pflichtpruefungen if p.name == "ausbelastung")
+    assert ausbelastung.ok
