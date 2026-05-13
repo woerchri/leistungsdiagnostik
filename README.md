@@ -17,8 +17,8 @@ uv --version            # muss erscheinen; falls nicht: curl -LsSf https://astra
 ### Installation
 
 ```bash
-git clone <REPO-URL> ~/Leistungsdiagnostik/tool
-cd ~/Leistungsdiagnostik/tool
+git clone https://github.com/woerchri/leistungsdiagnostik.git ~/Desktop/leistungsdiagnostik
+cd ~/Desktop/leistungsdiagnostik
 uv sync
 ```
 
@@ -63,7 +63,7 @@ Benötigt `OPENAI_API_KEY` in einer `.env`-Datei.
 ## Aktualisierungen einspielen
 
 ```bash
-git -C ~/Leistungsdiagnostik/tool pull && uv sync
+git -C ~/Desktop/leistungsdiagnostik pull && uv sync
 ```
 
 ---
