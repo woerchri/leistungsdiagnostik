@@ -4,4 +4,9 @@ output/
 __pycache__/
 *.pyc
 *.pkl
+*.egg-info/
 samples/output/
+.DS_Store
+main.py
+build_template.py
+build_report_template.py

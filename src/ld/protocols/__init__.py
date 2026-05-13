@@ -5,13 +5,15 @@ from typing import Callable
 from ld.errors import LDProtocolError
 from ld.types import AnalysisResult, TestRun
 
-from ld.protocols import lauf
+from ld.protocols import lauf, rad, unspezifisch
 
 
 ANALYZERS: dict[str, Callable[[TestRun], AnalysisResult]] = {
     "lauf": lauf.analyze,
     "triathlon-lauf": lauf.analyze,
-    # M7: "rad": rad.analyze, "triathlon-rad": rad.analyze, "unspezifisch": unspezifisch.analyze
+    "rad": rad.analyze,
+    "triathlon-rad": rad.analyze,
+    "unspezifisch": unspezifisch.analyze,
 }
 
 

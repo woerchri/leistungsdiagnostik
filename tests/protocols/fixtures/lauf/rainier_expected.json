@@ -1,0 +1,326 @@
+{
+  "test_run": {
+    "athlete": {
+      "sportart": "lauf",
+      "vorname": "Rainier",
+      "name": "Matzinger",
+      "geburtsjahr": 1968,
+      "geschlecht": "m",
+      "gewicht_kg": 71.5,
+      "groesse_m": 1.79,
+      "trainingsziel": "Marathonzeit verbessern",
+      "wettkampfziel": "Achenseelauf 2024",
+      "trainingsumfang_wo": "ca. 8h",
+      "leistungsniveau": "Hobbyläufer"
+    },
+    "testprotokoll": {
+      "testdatum": "2024-05-23",
+      "uhrzeit": "14:00",
+      "durchfuehrungsort": "Laufcamp Achensee",
+      "testleiter": "Anna-Maria Wörndle",
+      "geraet": "Laufband Atoll Achensee",
+      "anfangsintensitaet": 7.0,
+      "stufeninkrement": 1.0,
+      "stufendauer_min": 4.0,
+      "stufenlaenge_m": null,
+      "besonderheiten": "1% Steigung",
+      "letzte_stufe_vollstaendig": false,
+      "dauer_letzte_stufe_min": 1.75,
+      "ausbelastung": true
+    },
+    "steps": [
+      {
+        "stufe": 1,
+        "intensitaet": 7.0,
+        "herzfrequenz_bpm": 133,
+        "laktat_mmol": 1.9,
+        "rpe": 9
+      },
+      {
+        "stufe": 2,
+        "intensitaet": 8.0,
+        "herzfrequenz_bpm": 141,
+        "laktat_mmol": 2.8,
+        "rpe": 9
+      },
+      {
+        "stufe": 3,
+        "intensitaet": 9.0,
+        "herzfrequenz_bpm": 150,
+        "laktat_mmol": 3.0,
+        "rpe": 14
+      },
+      {
+        "stufe": 4,
+        "intensitaet": 10.0,
+        "herzfrequenz_bpm": 159,
+        "laktat_mmol": 3.8,
+        "rpe": 16
+      },
+      {
+        "stufe": 5,
+        "intensitaet": 11.0,
+        "herzfrequenz_bpm": 167,
+        "laktat_mmol": 5.2,
+        "rpe": 17
+      },
+      {
+        "stufe": 6,
+        "intensitaet": 12.0,
+        "herzfrequenz_bpm": 173,
+        "laktat_mmol": 7.9,
+        "rpe": 18
+      }
+    ],
+    "coaching": {
+      "verletzungen": "keine",
+      "aktuelle_probleme": "",
+      "staerken": "Grundlagenausdauer",
+      "schwaechen": "Tempohärte",
+      "geplante_wettkaempfe": "Achenseelauf Juni 2024",
+      "trainernotizen": "Erste Diagnostik der Saison"
+    }
+  },
+  "v_max": 11.4375,
+  "cubic": {
+    "a": 0.09259259259259242,
+    "b": -2.392460317460316,
+    "c": 21.005423280423276,
+    "d": -59.63730158730159
+  },
+  "hf_linear": {
+    "slope": 8.200000000000008,
+    "intercept": 75.93333333333325
+  },
+  "intersections": [
+    {
+      "laktat": 1.0,
+      "intensitaet": 6.0,
+      "pace_min_per_km": "10:00",
+      "herzfrequenz_bpm": 125
+    },
+    {
+      "laktat": 1.5,
+      "intensitaet": 6.0,
+      "pace_min_per_km": "10:00",
+      "herzfrequenz_bpm": 125
+    },
+    {
+      "laktat": 2.0,
+      "intensitaet": 7.065,
+      "pace_min_per_km": "08:30",
+      "herzfrequenz_bpm": 134
+    },
+    {
+      "laktat": 2.5,
+      "intensitaet": 7.658,
+      "pace_min_per_km": "07:50",
+      "herzfrequenz_bpm": 139
+    },
+    {
+      "laktat": 3.0,
+      "intensitaet": 8.707,
+      "pace_min_per_km": "06:53",
+      "herzfrequenz_bpm": 147
+    },
+    {
+      "laktat": 4.0,
+      "intensitaet": 10.23,
+      "pace_min_per_km": "05:52",
+      "herzfrequenz_bpm": 160
+    },
+    {
+      "laktat": 6.0,
+      "intensitaet": 11.368,
+      "pace_min_per_km": "05:17",
+      "herzfrequenz_bpm": 169
+    },
+    {
+      "laktat": 8.0,
+      "intensitaet": 12.024,
+      "pace_min_per_km": "04:59",
+      "herzfrequenz_bpm": 175
+    }
+  ],
+  "zones_suggested": [
+    {
+      "name": "Z1",
+      "ziel": "aktive Regeneration",
+      "rpe_min": 0,
+      "rpe_max": 2,
+      "intensitaet_min": null,
+      "intensitaet_max": null,
+      "pace_min_min_per_km": null,
+      "pace_max_min_per_km": null,
+      "herzfrequenz_min": null,
+      "herzfrequenz_max": null
+    },
+    {
+      "name": "Z2",
+      "ziel": "aerobe Basis",
+      "rpe_min": 3,
+      "rpe_max": 4,
+      "intensitaet_min": null,
+      "intensitaet_max": 7.065,
+      "pace_min_min_per_km": "08:30",
+      "pace_max_min_per_km": null,
+      "herzfrequenz_min": null,
+      "herzfrequenz_max": 134
+    },
+    {
+      "name": "Z3",
+      "ziel": "metabolische Stabilität",
+      "rpe_min": 5,
+      "rpe_max": 6,
+      "intensitaet_min": 7.065,
+      "intensitaet_max": 8.707,
+      "pace_min_min_per_km": "06:53",
+      "pace_max_min_per_km": "08:30",
+      "herzfrequenz_min": 134,
+      "herzfrequenz_max": 147
+    },
+    {
+      "name": "Z4",
+      "ziel": "Schwellenleistung",
+      "rpe_min": 7,
+      "rpe_max": 8,
+      "intensitaet_min": 8.707,
+      "intensitaet_max": 10.23,
+      "pace_min_min_per_km": "05:52",
+      "pace_max_min_per_km": "06:53",
+      "herzfrequenz_min": 147,
+      "herzfrequenz_max": 160
+    },
+    {
+      "name": "Z5",
+      "ziel": "VO2max-Reize",
+      "rpe_min": 9,
+      "rpe_max": 9,
+      "intensitaet_min": 10.23,
+      "intensitaet_max": 11.438,
+      "pace_min_min_per_km": "05:15",
+      "pace_max_min_per_km": "05:52",
+      "herzfrequenz_min": 160,
+      "herzfrequenz_max": 170
+    },
+    {
+      "name": "Z6",
+      "ziel": "neuromuskulär",
+      "rpe_min": 10,
+      "rpe_max": 10,
+      "intensitaet_min": 11.438,
+      "intensitaet_max": null,
+      "pace_min_min_per_km": null,
+      "pace_max_min_per_km": "05:15",
+      "herzfrequenz_min": 170,
+      "herzfrequenz_max": null
+    }
+  ],
+  "zones_final": [
+    {
+      "name": "Z1",
+      "ziel": "aktive Regeneration",
+      "rpe_min": 0,
+      "rpe_max": 2,
+      "intensitaet_min": null,
+      "intensitaet_max": null,
+      "pace_min_min_per_km": null,
+      "pace_max_min_per_km": null,
+      "herzfrequenz_min": null,
+      "herzfrequenz_max": null
+    },
+    {
+      "name": "Z2",
+      "ziel": "aerobe Basis",
+      "rpe_min": 3,
+      "rpe_max": 4,
+      "intensitaet_min": null,
+      "intensitaet_max": 7.065,
+      "pace_min_min_per_km": "08:30",
+      "pace_max_min_per_km": null,
+      "herzfrequenz_min": null,
+      "herzfrequenz_max": 134
+    },
+    {
+      "name": "Z3",
+      "ziel": "metabolische Stabilität",
+      "rpe_min": 5,
+      "rpe_max": 6,
+      "intensitaet_min": 7.065,
+      "intensitaet_max": 8.707,
+      "pace_min_min_per_km": "06:53",
+      "pace_max_min_per_km": "08:30",
+      "herzfrequenz_min": 134,
+      "herzfrequenz_max": 147
+    },
+    {
+      "name": "Z4",
+      "ziel": "Schwellenleistung",
+      "rpe_min": 7,
+      "rpe_max": 8,
+      "intensitaet_min": 8.707,
+      "intensitaet_max": 10.23,
+      "pace_min_min_per_km": "05:52",
+      "pace_max_min_per_km": "06:53",
+      "herzfrequenz_min": 147,
+      "herzfrequenz_max": 160
+    },
+    {
+      "name": "Z5",
+      "ziel": "VO2max-Reize",
+      "rpe_min": 9,
+      "rpe_max": 9,
+      "intensitaet_min": 10.23,
+      "intensitaet_max": 11.438,
+      "pace_min_min_per_km": "05:15",
+      "pace_max_min_per_km": "05:52",
+      "herzfrequenz_min": 160,
+      "herzfrequenz_max": 170
+    },
+    {
+      "name": "Z6",
+      "ziel": "neuromuskulär",
+      "rpe_min": 10,
+      "rpe_max": 10,
+      "intensitaet_min": 11.438,
+      "intensitaet_max": null,
+      "pace_min_min_per_km": null,
+      "pace_max_min_per_km": "05:15",
+      "herzfrequenz_min": 170,
+      "herzfrequenz_max": null
+    }
+  ],
+  "pflichtpruefungen": [
+    {
+      "name": "letzte_stufe",
+      "ok": false,
+      "message_de": "Letzte Stufe nicht vollständig (1.75 von 4 min). v_max wird aliquot berechnet."
+    },
+    {
+      "name": "hf_monotonic",
+      "ok": true,
+      "message_de": ""
+    },
+    {
+      "name": "laktat_monotonic",
+      "ok": true,
+      "message_de": ""
+    },
+    {
+      "name": "laktatsprung",
+      "ok": false,
+      "message_de": "Ungewöhnlich großer Laktatanstieg (Stufe 5→6: +2.7 mmol/L). Schwellenpassage oder Messfehler?"
+    },
+    {
+      "name": "rpe_konsistenz",
+      "ok": true,
+      "message_de": ""
+    },
+    {
+      "name": "ausbelastung",
+      "ok": true,
+      "message_de": ""
+    }
+  ],
+  "diagram_title": "Lauf_7_1_4; 23.05.2024"
+}
