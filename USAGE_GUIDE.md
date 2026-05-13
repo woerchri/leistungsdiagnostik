@@ -35,19 +35,38 @@ Die Vorlage hat vier Arbeitsblätter:
 > **RPE-Skala:** Verwende die Borg-Skala 6–20 (6 = keine Belastung, 20 = maximale Belastung).
 > Diese Skala ist in der Vorlage als Hinweis in Spalte G der Testdaten eingetragen.
 
-### Schritt 2: Bericht generieren (Codex-Modus)
+### Schritt 2: Bericht generieren
 
-1. Doppelklicke auf `~/Desktop/Leistungsdiagnostik.command`.
-2. Tippe `/ld-report` und drücke Enter.
-3. Codex führt die Pipeline aus und zeigt:
+Wähle einen der beiden Wege — der Ablauf ab Punkt 3 ist für beide gleich.
+
+---
+
+**Weg A — Terminal (.command-Datei)**
+
+1. Doppelklicke auf `Leistungsdiagnostik.command` auf dem Desktop.
+2. Ein Terminal-Fenster öffnet sich automatisch im richtigen Ordner.
+
+---
+
+**Weg B — Codex-App**
+
+1. Öffne die Codex-App (Programme-Ordner oder Spotlight: „Codex").
+2. Öffne den Projektordner: **Datei → Ordner öffnen → `~/Desktop/leistungsdiagnostik`**.
+
+---
+
+**Ab hier ist der Ablauf für beide Wege gleich:**
+
+3. Tippe `/ld-report` und drücke Enter.
+4. Codex führt die Pipeline aus und zeigt:
    - v_max
    - Schnittpunkttabelle
    - Vorgeschlagene Zonen (Z2–Z6)
    - Pflichtprüfungen-Ergebnis
-4. Codex fragt: *"Möchtest du die vorgeschlagenen Zonen so übernehmen oder anpassen?"*
-5. Antworte z.B.: `Z3 bis 9.0; Kontext: erste Session der Saison`
+5. Codex fragt: *„Möchtest du die vorgeschlagenen Zonen so übernehmen oder anpassen?"*
+6. Antworte z.B.: `Z3 bis 9.0; Kontext: erste Session der Saison`
    — oder drücke einfach Enter um die Vorschläge zu übernehmen.
-6. Codex erstellt den Endbericht: `output/<Name>_v1.docx`.
+7. Codex erstellt den Endbericht: `output/<Name>_v1.docx`.
 
 ### Schritt 3: Bericht bearbeiten und versenden
 
@@ -62,11 +81,7 @@ Das Werkzeug liefert einen Entwurf — du entscheidest über Schwellen und Formu
 
 Falls eine Stufe fehlerhaft gemessen wurde (z.B. Stufe 4):
 
-```bash
-uv run python -m ld.run input/Lisa.xlsx --exclude 4
-```
-
-Im Codex-Modus: Tippe `redo ohne Stufe 4`, Codex führt das automatisch aus.
+Tippe in Codex: `redo ohne Stufe 4` — Codex führt das automatisch aus.
 
 ### Zonen anpassen
 
@@ -146,7 +161,7 @@ des/der Athlet:in. Für die LLM-Interpretation wird automatisch eine anonymisier
 ## Aktualisierungen einspielen
 
 ```bash
-git -C ~/Leistungsdiagnostik/tool pull && uv sync
+git -C ~/Desktop/leistungsdiagnostik pull && uv sync
 ```
 
 Danach ist das Werkzeug auf dem neuesten Stand.
