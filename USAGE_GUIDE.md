@@ -1,9 +1,5 @@
 # Anleitung — Leistungsdiagnostik-Werkzeug
 
-Diese Anleitung erklärt, wie du einen Leistungsdiagnostik-Bericht erstellst.
-Sie wurde anhand des echten Werkzeugs geschrieben — alle Befehle und Ausgaben
-stammen aus echten Testläufen.
-
 ---
 
 ## Was das Werkzeug macht
@@ -11,27 +7,13 @@ stammen aus echten Testläufen.
 Du gibst eine Excel-Datei mit den Rohdaten des Tests ein. Das Werkzeug berechnet
 daraus automatisch:
 
-- Die maximale Leistung/Geschwindigkeit (aliquot, falls die letzte Stufe nicht abgeschlossen wurde)
-- Die Laktatkurve (Polynom 3. Grades) und Herzfrequenzgerade
-- Schnittpunkte bei festen Laktatwerten (1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0, 8.0 mmol/L)
+- Maximale Geschwindigkeit/Leistung (aliquot, falls die letzte Stufe nicht vollständig war)
+- Laktatkurve und Herzfrequenzgerade
+- Schnittpunkte bei 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 6.0 und 8.0 mmol/L
 - Vorgeschlagene Trainingszonen Z1–Z6
-- Pflichtprüfungen (Plausibilitätschecks)
-- Ein Diagramm (Laktat + Herzfrequenz)
-- Einen Word-Bericht als Entwurf
-
-Auf Wunsch ergänzt das Werkzeug eine erste Interpretation auf Deutsch (LLM-Entwurf),
-die du danach selbst bearbeitest.
-
----
-
-## Voraussetzungen (einmalig)
-
-→ Siehe [README.md](README.md) für die vollständige Einrichtungsanleitung.
-
-Kurzfassung:
-1. `uv sync` im Werkzeugordner ausführen.
-2. `Leistungsdiagnostik.command` auf dem Desktop ausführbar machen.
-3. Bei Bedarf: `.env`-Datei mit `OPENAI_API_KEY=sk-...` anlegen.
+- Plausibilitätsprüfungen
+- Diagramm (Laktat + Herzfrequenz)
+- Word-Bericht als Entwurf, den du danach selbst bearbeitest
 
 ---
 
@@ -74,35 +56,6 @@ Das Werkzeug liefert einen Entwurf — du entscheidest über Schwellen und Formu
 
 ---
 
-## Fallback ohne Codex (OpenAI API direkt)
-
-Falls Codex nicht verfügbar ist:
-
-```bash
-cd ~/Leistungsdiagnostik/tool
-uv run python -m ld.run input/Lisa_2024-09-14.xlsx --interpret
-```
-
-**Ausgabe:**
-```
-Endbericht: output/Lisa_2024-09-14_v1.docx
-Pflichtprüfungen: alle OK.
-```
-
-Ohne `--interpret` erhältst du nur den Entwurf (ohne Interpretation):
-```bash
-uv run python -m ld.run input/Lisa_2024-09-14.xlsx
-```
-```
-Entwurf:    output/Lisa_2024-09-14_draft_v1.docx
-JSON:       output/Lisa_2024-09-14.json
-Mit --interpret aufrufen für eine erste Interpretation.
-Pflichtprüfungen — Hinweise:
-  • Letzte Stufe nicht vollständig (1.75 von 4 min). v_max wird aliquot berechnet.
-```
-
----
-
 ## Häufige Situationen
 
 ### Eine Stufe weglassen
@@ -117,16 +70,11 @@ Im Codex-Modus: Tippe `redo ohne Stufe 4`, Codex führt das automatisch aus.
 
 ### Zonen anpassen
 
-**Im Codex-Modus:** Beantworte die Zonenfrage mit konkreten Werten:
+Beantworte die Zonenfrage von Codex mit konkreten Werten:
 ```
 Z3 bis 9.2, Z4 bis 10.5; Kontext: guter Trainingszustand, Vorbereitung Halbmarathon
 ```
-
-**Direkt über die Kommandozeile:**
-```bash
-uv run python -m ld.zones_cli output/Lisa Z3_upper=9.2 Z4_upper=10.5
-```
-Das erstellt automatisch einen neuen Entwurf `output/Lisa_draft_v2.docx`.
+Codex erstellt automatisch einen aktualisierten Bericht.
 
 ### Bericht neu erstellen (neue Version)
 
@@ -135,24 +83,25 @@ automatisch `_v2.docx`, `_v3.docx` usw.
 
 ### Eingabedatei wurde geändert
 
-Führe den Befehl erneut aus. Das JSON und der Pickle werden aktualisiert.
+Führe den Befehl einfach erneut aus. Das Werkzeug liest die Datei neu ein.
 
 ---
 
 ## Pflichtprüfungen verstehen
 
-Das Werkzeug prüft vor der Interpretation automatisch:
+Vor der Interpretation prüft das Werkzeug automatisch die Plausibilität der Daten.
+Falls etwas auffällt, erscheint ein Hinweis wie:
 
-| Prüfung | Bedeutung |
-|---------|-----------|
-| `letzte_stufe` | Letzte Stufe war unvollständig → v_max wird aliquot berechnet |
-| `hf_monotonic` | HF fällt zwischen Stufen → möglicher Messfehler |
-| `laktat_monotonic` | Laktat fällt stark ab → möglicher Messfehler |
-| `laktatsprung` | Laktatanstieg > 2.5 mmol/L zwischen zwei Stufen → Schwellenpassage oder Fehler |
-| `rpe_konsistenz` | RPE fällt trotz steigender Belastung → Eingabefehler prüfen |
-| `ausbelastung` | Keine vollständige Ausbelastung → Schwellen vorsichtiger formulieren |
+| Was du siehst | Was es bedeutet |
+|---------------|-----------------|
+| „Letzte Stufe nicht vollständig (X von Y min). v_max wird aliquot berechnet." | Normal wenn der Athlet mittendrin abgebrochen hat — das Werkzeug rechnet das korrekt heraus. |
+| „Herzfrequenz fällt zwischen Stufen ab." | Möglicher Messfehler oder kurze Erholung — prüfe die HF-Werte in der Excel. |
+| „Laktat fällt deutlich zwischen Stufen ab." | Ungewöhnlich — prüfe ob die Werte richtig eingetragen sind. |
+| „Ungewöhnlich großer Laktatanstieg … Schwellenpassage oder Messfehler?" | Häufig an der Schwelle normal; prüfe trotzdem die Eingabe. |
+| „RPE fällt mit steigender Belastung." | Wahrscheinlich Tippfehler in der Excel. |
+| „Keine vollständige Ausbelastung erreicht." | Schwellen in der Interpretation vorsichtiger formulieren. |
 
-Ein Hinweis blockiert nicht den Bericht, zeigt aber an, was zu beachten ist.
+Kein Hinweis blockiert den Bericht — du siehst die Ausgabe trotzdem vollständig.
 
 ---
 
