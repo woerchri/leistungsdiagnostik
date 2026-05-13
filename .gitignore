@@ -1,0 +1,7 @@
+.venv/
+output/
+.env
+__pycache__/
+*.pyc
+*.pkl
+samples/output/

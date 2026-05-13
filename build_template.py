@@ -1,0 +1,141 @@
+"""Build templates/input_template.xlsx pre-filled with Rainier's data."""
+from pathlib import Path
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+OUT = Path("templates/input_template.xlsx")
+OUT.parent.mkdir(exist_ok=True)
+
+wb = openpyxl.Workbook()
+
+HEADER_FILL = PatternFill("solid", start_color="2E75B6", end_color="2E75B6")
+NOTE_FILL   = PatternFill("solid", start_color="FFF2CC", end_color="FFF2CC")
+KEY_FILL    = PatternFill("solid", start_color="D9E1F2", end_color="D9E1F2")
+HEADER_FONT = Font(bold=True, color="FFFFFF", name="Arial")
+KEY_FONT    = Font(bold=True, name="Arial")
+BODY_FONT   = Font(name="Arial")
+
+thin = Side(style="thin", color="CCCCCC")
+thin_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+def hdr(ws, row, col, val):
+    c = ws.cell(row=row, column=col, value=val)
+    c.font = HEADER_FONT; c.fill = HEADER_FILL; c.alignment = Alignment(horizontal="center")
+
+def kv(ws, row, key, val, note=None):
+    kc = ws.cell(row=row, column=1, value=key)
+    kc.font = KEY_FONT; kc.fill = KEY_FILL
+    vc = ws.cell(row=row, column=2, value=val)
+    vc.font = BODY_FONT
+    if note:
+        nc = ws.cell(row=row, column=3, value=note)
+        nc.font = Font(name="Arial", italic=True, color="808080")
+
+# ── Athlet ──────────────────────────────────────────────────────────────────
+ws = wb.active
+ws.title = "Athlet"
+ws.column_dimensions["A"].width = 28
+ws.column_dimensions["B"].width = 30
+ws.column_dimensions["C"].width = 45
+
+hdr(ws, 1, 1, "Feld"); hdr(ws, 1, 2, "Wert"); hdr(ws, 1, 3, "Hinweis")
+
+rows = [
+    ("Sportart",           "Lauf",          "Erlaubt: lauf | rad | triathlon-rad | triathlon-lauf | unspezifisch"),
+    ("Vorname",            "Rainier",        ""),
+    ("Name",               "Matzinger",      ""),
+    ("Geburtsjahr",        1968,             "Vierstellig, z.B. 1985"),
+    ("Geschlecht",         "m",              "m | w | d (optional)"),
+    ("Gewicht (kg)",       71.5,             ""),
+    ("Größe (m)",          1.79,             "In Metern, z.B. 1.79"),
+    ("Trainingsziel",      "Marathonzeit verbessern", ""),
+    ("Wettkampfziel",      "Achenseelauf 2024",        ""),
+    ("Trainingsumfang/Woche", "ca. 8h",      ""),
+    ("Leistungsniveau",    "Hobbyläufer",    ""),
+]
+for i, (k, v_, n) in enumerate(rows, start=2):
+    kv(ws, i, k, v_, n)
+
+# ── Testprotokoll ────────────────────────────────────────────────────────────
+ws2 = wb.create_sheet("Testprotokoll")
+ws2.column_dimensions["A"].width = 38
+ws2.column_dimensions["B"].width = 30
+ws2.column_dimensions["C"].width = 45
+
+hdr(ws2, 1, 1, "Feld"); hdr(ws2, 1, 2, "Wert"); hdr(ws2, 1, 3, "Hinweis")
+
+import datetime
+proto_rows = [
+    ("Testdatum",                          "23.05.2024",                  "Format: TT.MM.JJJJ"),
+    ("Uhrzeit",                            "14:00",                       "Format: HH:MM"),
+    ("Durchführungsort",                   "Laufcamp Achensee",           ""),
+    ("Testleiter",                         "Anna-Maria Wörndle",          ""),
+    ("Gerät",                              "Laufband Atoll Achensee",     ""),
+    ("Anfangsintensität",                  7.0,                           "km/h (Lauf) | W (Rad) | Stufe (Unspez)"),
+    ("Stufeninkrement",                    1.0,                           "km/h | W | Stufen"),
+    ("Stufendauer (min)",                  4.0,                           "Minuten"),
+    ("Stufenlänge (m)",                    None,                          "Optional, nur Lauf (z.B. 1600)"),
+    ("Besonderheiten",                     "1% Steigung",                 "Freitext"),
+    ("Letzte Stufe vollständig absolviert","Nein",                        "JA oder NEIN"),
+    ("Dauer letzte Stufe (min)",           1.75,                          "Nur ausfüllen wenn NEIN oben"),
+    ("Ausbelastung",                       "Ja",                          "JA oder NEIN"),
+]
+for i, (k, v_, n) in enumerate(proto_rows, start=2):
+    kv(ws2, i, k, v_, n)
+
+# ── Testdaten ────────────────────────────────────────────────────────────────
+ws3 = wb.create_sheet("Testdaten")
+ws3.column_dimensions["A"].width = 8
+ws3.column_dimensions["B"].width = 14
+ws3.column_dimensions["C"].width = 14
+ws3.column_dimensions["D"].width = 14
+ws3.column_dimensions["E"].width = 8
+
+headers = ["Stufe", "Intensität", "Herzfrequenz", "Laktat", "RPE"]
+for col, h in enumerate(headers, start=1):
+    hdr(ws3, 1, col, h)
+
+# RPE note in column G (outside the data range, visible to user)
+note_cell = ws3.cell(row=1, column=7,
+    value="RPE-Skala: 6-20 (Borg). 6=keine, 20=maximale Belastung")
+note_cell.fill = NOTE_FILL
+note_cell.font = Font(name="Arial", italic=True, color="7F6000")
+
+# Rainier's data — 6 complete steps (step 6 is the last measured, incomplete)
+data = [
+    (1, 7.0,  133, 1.9, 9),
+    (2, 8.0,  141, 2.8, 9),
+    (3, 9.0,  150, 3.0, 14),
+    (4, 10.0, 159, 3.8, 16),
+    (5, 11.0, 167, 5.2, 17),
+    (6, 12.0, 173, 7.9, 18),
+]
+for i, row_data in enumerate(data, start=2):
+    for col, val in enumerate(row_data, start=1):
+        c = ws3.cell(row=i, column=col, value=val)
+        c.font = BODY_FONT
+
+# ── Coaching ─────────────────────────────────────────────────────────────────
+ws4 = wb.create_sheet("Coaching")
+ws4.column_dimensions["A"].width = 30
+ws4.column_dimensions["B"].width = 50
+
+hdr(ws4, 1, 1, "Feld"); hdr(ws4, 1, 2, "Wert")
+
+coaching_rows = [
+    ("Verletzungen",       "keine"),
+    ("Aktuelle Probleme",  ""),
+    ("Stärken",            "Grundlagenausdauer"),
+    ("Schwächen",          "Tempohärte"),
+    ("Geplante Wettkämpfe","Achenseelauf Juni 2024"),
+    ("Trainernotizen",     "Erste Diagnostik der Saison"),
+]
+for i, (k, v_) in enumerate(coaching_rows, start=2):
+    kc = ws4.cell(row=i, column=1, value=k)
+    kc.font = KEY_FONT; kc.fill = KEY_FILL
+    vc = ws4.cell(row=i, column=2, value=v_)
+    vc.font = BODY_FONT
+
+wb.save(OUT)
+print(f"Template gespeichert: {OUT}")
