@@ -28,39 +28,76 @@ def suggest_zones(
     v_max: float,
     is_lauf: bool,
 ) -> tuple[TrainingZone, ...]:
-    """Return Z1..Z6 with suggested boundaries from lactate curve.
+    """Return suggested training zones from the lactate curve.
 
-    Heuristic (transparent, not fixed mmol cutoffs — see spec):
-      Z2 upper: v at 2.0 mmol/L
-      Z3 upper: v at 3.0 mmol/L
-      Z4 upper: v at 4.0 mmol/L
-      Z5 upper: v_max (aliquot-corrected)
-      Z6: above v_max (no upper bound)
+    Heuristic (Orientierungspunkte — NOT fixed mmol thresholds; see spec
+    `samples/26_05_LD_Dateneingabe.docx` "Keine rein fixen mmol-Schwellen
+    verwenden"):
+
+      Z2 upper: v at 2.0 mmol/L       (aerobic base ceiling — orientation)
+      Z3 upper: v at 3.0 mmol/L       (metabolic stability — orientation)
+      Z4 upper: v at 4.0 mmol/L       (threshold — orientation)
+      Z5 upper: v_max (aliquot)
+      Z6:       above v_max — rendered as "MAX"
+
+    These are SUGGESTIONS. The trainer confirms or adjusts via
+    `/ld-report` dialogue or `ld.zones_cli`.
+
+    Z1 (active recovery) is only emitted when Z2 has a valid upper bound;
+    its values render as `< v_z2_upper` etc. on the report.
+
+    Z6 is flagged `is_max_zone=True`; the report renders Intensität / HF /
+    Pace as the literal word "MAX" (per Anna 2026-05-13 feedback).
     """
     v_lk2 = _intersection_lookup(rows, 2.0)
     v_lk3 = _intersection_lookup(rows, 3.0)
     v_lk4 = _intersection_lookup(rows, 4.0)
 
-    # (lower, upper) for Z2..Z6
-    bounds = [
+    # (lower, upper) for Z2..Z5 — Z6 is constructed separately as the max-zone
+    bounds_z2_z5 = [
         (None,   v_lk2),
         (v_lk2,  v_lk3),
         (v_lk3,  v_lk4),
         (v_lk4,  v_max),
-        (v_max,  None),
     ]
 
     zones: list[TrainingZone] = []
-    for (name, ziel, rpe_lo, rpe_hi), (lo, hi) in zip(ZONE_META[1:], bounds):
+    for (name, ziel, rpe_lo, rpe_hi), (lo, hi) in zip(ZONE_META[1:5], bounds_z2_z5):
         zones.append(_zone(name, ziel, rpe_lo, rpe_hi, lo, hi, hf_linear, is_lauf))
+
+    # Z6: above v_max — values rendered as "MAX" in report
+    z6_name, z6_ziel, z6_rpe_lo, z6_rpe_hi = ZONE_META[5]
+    z6 = TrainingZone(
+        name=z6_name,
+        ziel=z6_ziel,
+        rpe_min=z6_rpe_lo,
+        rpe_max=z6_rpe_hi,
+        intensitaet_min=round(v_max, 3),
+        intensitaet_max=None,
+        pace_min_min_per_km=None,
+        pace_max_min_per_km=(_pace_min_per_km(v_max) if is_lauf else None),
+        herzfrequenz_min=int(round(hf_linear.predict(v_max))),
+        herzfrequenz_max=None,
+        is_max_zone=True,
+    )
+    zones.append(z6)
+
+    # Z1 only when Z2 has a valid upper bound (otherwise no anchor for "<")
+    if v_lk2 is None:
+        return tuple(zones)
 
     z1 = TrainingZone(
         name="Z1",
         ziel="aktive Regeneration",
         rpe_min=0, rpe_max=2,
-        intensitaet_min=None, intensitaet_max=None,
-        pace_min_min_per_km=None, pace_max_min_per_km=None,
-        herzfrequenz_min=None, herzfrequenz_max=None,
+        intensitaet_min=None,
+        intensitaet_max=round(v_lk2, 3),
+        # Z1 pace: slower than v_lk2 pace, i.e. pace > pace(v_lk2)
+        pace_min_min_per_km=(_pace_min_per_km(v_lk2) if is_lauf else None),
+        pace_max_min_per_km=None,
+        herzfrequenz_min=None,
+        herzfrequenz_max=int(round(hf_linear.predict(v_lk2))),
+        is_open_lower=True,
     )
     return (z1, *zones)
 

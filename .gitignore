@@ -8,5 +8,5 @@ __pycache__/
 samples/output/
 .DS_Store
 main.py
-build_template.py
-build_report_template.py
+# Claude Code session metadata
+.claude/

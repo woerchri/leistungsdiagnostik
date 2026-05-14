@@ -8,7 +8,15 @@ from ld.protocols._common import (
     compute_vmax,
     intersection_table,
 )
-from ld.types import TestStep, TestRun, Athlete, Testprotokoll, Coaching
+from ld.types import (
+    Athlete,
+    Coaching,
+    CubicFit,
+    LinearFit,
+    TestRun,
+    TestStep,
+    Testprotokoll,
+)
 from datetime import date
 
 
@@ -27,7 +35,7 @@ _RAINIER_PROTO = Testprotokoll(
     durchfuehrungsort="Laufcamp Achensee",
     testleiter="Anna-Maria Wörndle",
     geraet="Laufband Atoll Achensee",
-    anfangsintensitaet=7.0,
+    anfangsbelastung=7.0,
     stufeninkrement=1.0,
     stufendauer_min=4.0,
     stufenlaenge_m=None,
@@ -115,14 +123,39 @@ def test_intersection_hf_rainier():
     assert abs(by_lak[6.0].herzfrequenz_bpm - 169.15) < 1
 
 
-def test_floor_rows():
+def test_below_range_rows_are_none():
+    """Per Anna 2026-05-13 feedback: targets without a valid in-range root return
+    a row with all values None. The report layer drops these entirely — no
+    floor values, no `-` placeholders, no extrapolated fantasy numbers."""
     cubic = fit_cubic_laktat(_RAINIER_STEPS)
     hf = fit_linear_hf(_RAINIER_STEPS)
     rows = intersection_table(cubic, hf, 7.0, 12.0, is_lauf=True)
     by_lak = {r.laktat: r for r in rows}
-    # lak=1.0 and 1.5 are below measurement range → floor at 6.0
-    assert by_lak[1.0].intensitaet == 6.0
-    assert by_lak[1.5].intensitaet == 6.0
+    # Rainier's lactate starts at 1.9 mmol — 1.0 and 1.5 have no in-range root.
+    for target in (1.0, 1.5):
+        assert by_lak[target].intensitaet is None
+        assert by_lak[target].herzfrequenz_bpm is None
+        assert by_lak[target].pace_min_per_km is None
+
+
+def test_intersection_picks_larger_root_when_multiple():
+    """Per Anna 2026-05-13 feedback: when a cubic has multiple in-range roots
+    for a target, the LARGER x is the physiologically relevant crossing.
+
+    Construct a synthetic cubic with a known double-crossing at lactate=2.0:
+      f(x) = (x - 8)(x - 11)(x - 14) / 6 + 2
+    Roots at x=8, 11, 14 with three crossings of 2.0 in [7, 15]; we want 14.
+    """
+    # Expand: (x-8)(x-11)(x-14) = x^3 - 33x^2 + 354x - 1232
+    # Divide by 6 → coefficients
+    cubic = CubicFit(a=1/6, b=-33/6, c=354/6, d=-1232/6 + 2.0)
+    hf = LinearFit(slope=10.0, intercept=80.0)
+    rows = intersection_table(cubic, hf, 7.0, 15.0, is_lauf=False)
+    by_lak = {r.laktat: r for r in rows}
+    # The three real roots of f(x)-2.0=0 are 8, 11, 14; all in [7, 15.0 + 20%=16.6].
+    # We must pick the LARGEST.
+    assert by_lak[2.0].intensitaet is not None
+    assert abs(by_lak[2.0].intensitaet - 14.0) < 1e-3
 
 
 def test_laktat_targets():

@@ -23,7 +23,7 @@ def _check_letzte_stufe(tr: TestRun) -> PflichtpruefungResult:
             ok=False,
             message_de=(
                 f"Letzte Stufe nicht vollständig ({d:.2f} von {total:.0f} min). "
-                f"v_max wird aliquot berechnet."
+                f"Maximalgeschwindigkeit wird aliquot berechnet."
             ),
         )
     return PflichtpruefungResult("letzte_stufe", True, "")

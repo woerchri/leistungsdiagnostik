@@ -45,7 +45,8 @@ rows = [
     ("Sportart",           "Lauf",          "Erlaubt: lauf | rad | triathlon-rad | triathlon-lauf | unspezifisch"),
     ("Vorname",            "Rainier",        ""),
     ("Name",               "Matzinger",      ""),
-    ("Geburtsjahr",        1968,             "Vierstellig, z.B. 1985"),
+    ("Email",              "rainier@example.com", "Optional"),
+    ("Geburtsjahr",        1968,             "Vierstellig, z.B. 1985 — optional (kann leer bleiben)"),
     ("Geschlecht",         "m",              "m | w | d (optional)"),
     ("Gewicht (kg)",       71.5,             ""),
     ("Größe (m)",          1.79,             "In Metern, z.B. 1.79"),
@@ -68,11 +69,11 @@ hdr(ws2, 1, 1, "Feld"); hdr(ws2, 1, 2, "Wert"); hdr(ws2, 1, 3, "Hinweis")
 import datetime
 proto_rows = [
     ("Testdatum",                          "23.05.2024",                  "Format: TT.MM.JJJJ"),
-    ("Uhrzeit",                            "14:00",                       "Format: HH:MM"),
+    ("Uhrzeit",                            "14:00",                       "Format: hh:mm"),
     ("Durchführungsort",                   "Laufcamp Achensee",           ""),
     ("Testleiter",                         "Anna-Maria Wörndle",          ""),
     ("Gerät",                              "Laufband Atoll Achensee",     ""),
-    ("Anfangsintensität",                  7.0,                           "km/h (Lauf) | W (Rad) | Stufe (Unspez)"),
+    ("Anfangsbelastung",                   7.0,                           "km/h (Lauf) | W (Rad) | Stufe (Unspez)"),
     ("Stufeninkrement",                    1.0,                           "km/h | W | Stufen"),
     ("Stufendauer (min)",                  4.0,                           "Minuten"),
     ("Stufenlänge (m)",                    None,                          "Optional, nur Lauf (z.B. 1600)"),
@@ -80,6 +81,8 @@ proto_rows = [
     ("Letzte Stufe vollständig absolviert","Nein",                        "JA oder NEIN"),
     ("Dauer letzte Stufe (min)",           1.75,                          "Nur ausfüllen wenn NEIN oben"),
     ("Ausbelastung",                       "Ja",                          "JA oder NEIN"),
+    ("Nachbelastungslaktat 3min (mmol/l)", None,                          "Optional — Laktatwert 3 min nach Belastung"),
+    ("Nachbelastungslaktat 5min (mmol/l)", None,                          "Optional — Laktatwert 5 min nach Belastung"),
 ]
 for i, (k, v_, n) in enumerate(proto_rows, start=2):
     kv(ws2, i, k, v_, n)

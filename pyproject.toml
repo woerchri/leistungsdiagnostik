@@ -9,8 +9,13 @@ dependencies = [
     "openpyxl>=3.1.5",
     "pandas>=3.0.3",
     "python-docx>=1.2.0",
-    "python-dotenv>=1.2.2",
-    "openai>=1.0.0",
+]
+
+[project.optional-dependencies]
+# Visual zone-editing tool (Anna 2026-05-13 Phase 8). Install with
+# `uv pip install -e ".[visual]"` then run `uv run streamlit run src/ld/zone_tool.py`.
+visual = [
+    "streamlit>=1.40",
 ]
 
 [dependency-groups]

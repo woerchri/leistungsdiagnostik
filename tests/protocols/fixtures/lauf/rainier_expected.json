@@ -11,7 +11,8 @@
       "trainingsziel": "Marathonzeit verbessern",
       "wettkampfziel": "Achenseelauf 2024",
       "trainingsumfang_wo": "ca. 8h",
-      "leistungsniveau": "Hobbyläufer"
+      "leistungsniveau": "Hobbyläufer",
+      "email": null
     },
     "testprotokoll": {
       "testdatum": "2024-05-23",
@@ -19,14 +20,16 @@
       "durchfuehrungsort": "Laufcamp Achensee",
       "testleiter": "Anna-Maria Wörndle",
       "geraet": "Laufband Atoll Achensee",
-      "anfangsintensitaet": 7.0,
+      "anfangsbelastung": 7.0,
       "stufeninkrement": 1.0,
       "stufendauer_min": 4.0,
       "stufenlaenge_m": null,
       "besonderheiten": "1% Steigung",
       "letzte_stufe_vollstaendig": false,
       "dauer_letzte_stufe_min": 1.75,
-      "ausbelastung": true
+      "ausbelastung": true,
+      "nachbelastungslaktat_3min_mmol": null,
+      "nachbelastungslaktat_5min_mmol": null
     },
     "steps": [
       {
@@ -95,15 +98,15 @@
   "intersections": [
     {
       "laktat": 1.0,
-      "intensitaet": 6.0,
-      "pace_min_per_km": "10:00",
-      "herzfrequenz_bpm": 125
+      "intensitaet": null,
+      "pace_min_per_km": null,
+      "herzfrequenz_bpm": null
     },
     {
       "laktat": 1.5,
-      "intensitaet": 6.0,
-      "pace_min_per_km": "10:00",
-      "herzfrequenz_bpm": 125
+      "intensitaet": null,
+      "pace_min_per_km": null,
+      "herzfrequenz_bpm": null
     },
     {
       "laktat": 2.0,
@@ -149,11 +152,13 @@
       "rpe_min": 0,
       "rpe_max": 2,
       "intensitaet_min": null,
-      "intensitaet_max": null,
-      "pace_min_min_per_km": null,
+      "intensitaet_max": 7.065,
+      "pace_min_min_per_km": "08:30",
       "pace_max_min_per_km": null,
       "herzfrequenz_min": null,
-      "herzfrequenz_max": null
+      "herzfrequenz_max": 134,
+      "is_max_zone": false,
+      "is_open_lower": true
     },
     {
       "name": "Z2",
@@ -165,7 +170,9 @@
       "pace_min_min_per_km": "08:30",
       "pace_max_min_per_km": null,
       "herzfrequenz_min": null,
-      "herzfrequenz_max": 134
+      "herzfrequenz_max": 134,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z3",
@@ -177,7 +184,9 @@
       "pace_min_min_per_km": "06:53",
       "pace_max_min_per_km": "08:30",
       "herzfrequenz_min": 134,
-      "herzfrequenz_max": 147
+      "herzfrequenz_max": 147,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z4",
@@ -189,7 +198,9 @@
       "pace_min_min_per_km": "05:52",
       "pace_max_min_per_km": "06:53",
       "herzfrequenz_min": 147,
-      "herzfrequenz_max": 160
+      "herzfrequenz_max": 160,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z5",
@@ -201,7 +212,9 @@
       "pace_min_min_per_km": "05:15",
       "pace_max_min_per_km": "05:52",
       "herzfrequenz_min": 160,
-      "herzfrequenz_max": 170
+      "herzfrequenz_max": 170,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z6",
@@ -213,7 +226,9 @@
       "pace_min_min_per_km": null,
       "pace_max_min_per_km": "05:15",
       "herzfrequenz_min": 170,
-      "herzfrequenz_max": null
+      "herzfrequenz_max": null,
+      "is_max_zone": true,
+      "is_open_lower": false
     }
   ],
   "zones_final": [
@@ -223,11 +238,13 @@
       "rpe_min": 0,
       "rpe_max": 2,
       "intensitaet_min": null,
-      "intensitaet_max": null,
-      "pace_min_min_per_km": null,
+      "intensitaet_max": 7.065,
+      "pace_min_min_per_km": "08:30",
       "pace_max_min_per_km": null,
       "herzfrequenz_min": null,
-      "herzfrequenz_max": null
+      "herzfrequenz_max": 134,
+      "is_max_zone": false,
+      "is_open_lower": true
     },
     {
       "name": "Z2",
@@ -239,7 +256,9 @@
       "pace_min_min_per_km": "08:30",
       "pace_max_min_per_km": null,
       "herzfrequenz_min": null,
-      "herzfrequenz_max": 134
+      "herzfrequenz_max": 134,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z3",
@@ -251,7 +270,9 @@
       "pace_min_min_per_km": "06:53",
       "pace_max_min_per_km": "08:30",
       "herzfrequenz_min": 134,
-      "herzfrequenz_max": 147
+      "herzfrequenz_max": 147,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z4",
@@ -263,7 +284,9 @@
       "pace_min_min_per_km": "05:52",
       "pace_max_min_per_km": "06:53",
       "herzfrequenz_min": 147,
-      "herzfrequenz_max": 160
+      "herzfrequenz_max": 160,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z5",
@@ -275,7 +298,9 @@
       "pace_min_min_per_km": "05:15",
       "pace_max_min_per_km": "05:52",
       "herzfrequenz_min": 160,
-      "herzfrequenz_max": 170
+      "herzfrequenz_max": 170,
+      "is_max_zone": false,
+      "is_open_lower": false
     },
     {
       "name": "Z6",
@@ -287,14 +312,16 @@
       "pace_min_min_per_km": null,
       "pace_max_min_per_km": "05:15",
       "herzfrequenz_min": 170,
-      "herzfrequenz_max": null
+      "herzfrequenz_max": null,
+      "is_max_zone": true,
+      "is_open_lower": false
     }
   ],
   "pflichtpruefungen": [
     {
       "name": "letzte_stufe",
       "ok": false,
-      "message_de": "Letzte Stufe nicht vollständig (1.75 von 4 min). v_max wird aliquot berechnet."
+      "message_de": "Letzte Stufe nicht vollständig (1.75 von 4 min). Maximalgeschwindigkeit wird aliquot berechnet."
     },
     {
       "name": "hf_monotonic",

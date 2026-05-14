@@ -10,6 +10,24 @@ from ld import io_input, protocols
 FIXTURES = Path(__file__).parent / "fixtures" / "lauf"
 
 
+def _intersections_match(actual: dict, expected: dict, tol: float = 0.05) -> None:
+    """Dict-keyed comparison so the test is robust to rows dropped because of
+    no in-range root (per Anna 2026-05-13 feedback). Only checks targets where
+    BOTH actual and expected have a non-None intensitaet."""
+    a_by = {r["laktat"]: r for r in actual["intersections"]}
+    e_by = {r["laktat"]: r for r in expected["intersections"]}
+    for lak, e_row in e_by.items():
+        if e_row["intensitaet"] is None:
+            assert a_by.get(lak, {}).get("intensitaet") is None, \
+                f"lak={lak}: expected None, got {a_by.get(lak)}"
+            continue
+        a_row = a_by.get(lak)
+        assert a_row is not None and a_row["intensitaet"] is not None, \
+            f"lak={lak}: expected {e_row['intensitaet']}, got missing/None"
+        assert abs(float(a_row["intensitaet"]) - float(e_row["intensitaet"])) < tol, \
+            f"lak={lak}: v mismatch {a_row['intensitaet']} vs {e_row['intensitaet']}"
+
+
 def test_rainier_snapshot():
     test_run = io_input.parse_input(FIXTURES / "rainier.xlsx")
     result = protocols.analyze(test_run)
@@ -17,11 +35,7 @@ def test_rainier_snapshot():
     expected = json.loads((FIXTURES / "rainier_expected.json").read_text())
 
     assert abs(actual["v_max"] - 11.4375) < 0.01
-
-    for a_row, e_row in zip(actual["intersections"], expected["intersections"]):
-        if a_row["intensitaet"] is not None and e_row["intensitaet"] is not None:
-            assert abs(float(a_row["intensitaet"]) - float(e_row["intensitaet"])) < 0.05, \
-                f"lak={a_row['laktat']}: v mismatch {a_row['intensitaet']} vs {e_row['intensitaet']}"
+    _intersections_match(actual, expected)
 
 
 def test_rainier_pflichtpruefungen():
@@ -47,11 +61,7 @@ def test_sarah_snapshot():
     expected = json.loads((FIXTURES / "sarah_expected.json").read_text())
 
     assert abs(actual["v_max"] - 13.0) < 0.01
-
-    for a_row, e_row in zip(actual["intersections"], expected["intersections"]):
-        if a_row["intensitaet"] is not None and e_row["intensitaet"] is not None:
-            assert abs(float(a_row["intensitaet"]) - float(e_row["intensitaet"])) < 0.05, \
-                f"lak={a_row['laktat']}: v mismatch {a_row['intensitaet']} vs {e_row['intensitaet']}"
+    _intersections_match(actual, expected)
 
 
 def test_sarah_pflichtpruefungen():

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+import re
+from datetime import date, datetime, time
 from pathlib import Path
 
 import openpyxl
@@ -57,12 +58,24 @@ def _parse_athlete(wb) -> Athlete:
         raise LDInputError(
             f"Sportart '{sportart_raw}' nicht unterstützt. Erlaubt: {sorted(SUPPORTED)}."
         )
+    geburtsjahr_raw = _kv(ws, "Geburtsjahr")  # Optional per Anna 2026-05-13 feedback
+    geburtsjahr: int | None
+    if geburtsjahr_raw is None or geburtsjahr_raw == "":
+        geburtsjahr = None
+    else:
+        try:
+            geburtsjahr = int(geburtsjahr_raw)
+        except (ValueError, TypeError) as e:
+            raise LDInputError(
+                f"Geburtsjahr muss vierstellig sein oder leer bleiben, nicht '{geburtsjahr_raw}'."
+            ) from e
+    email_raw = _kv(ws, "Email") or _kv(ws, "E-Mail")  # Both spellings accepted
     try:
         return Athlete(
             sportart=sportart_raw,
             vorname=_required_kv(ws, "Vorname"),
             name=_required_kv(ws, "Name"),
-            geburtsjahr=int(_required_kv(ws, "Geburtsjahr")),
+            geburtsjahr=geburtsjahr,
             geschlecht=(_kv(ws, "Geschlecht") or None),
             gewicht_kg=float(_required_kv(ws, "Gewicht (kg)")),
             groesse_m=float(_required_kv(ws, "Größe (m)")),
@@ -70,6 +83,7 @@ def _parse_athlete(wb) -> Athlete:
             wettkampfziel=str(_kv(ws, "Wettkampfziel") or ""),
             trainingsumfang_wo=str(_kv(ws, "Trainingsumfang/Woche") or ""),
             leistungsniveau=str(_kv(ws, "Leistungsniveau") or ""),
+            email=(str(email_raw).strip() if email_raw else None),
         )
     except (ValueError, TypeError) as e:
         raise LDInputError(f"Athletendaten konnten nicht gelesen werden: {e}") from e
@@ -88,6 +102,17 @@ def _parse_testprotokoll(wb) -> Testprotokoll:
         raise LDInputError(
             "Testdatum auf Blatt 'Testprotokoll' fehlt oder hat falsches Format (erwartet TT.MM.JJJJ)."
         )
+
+    # Uhrzeit must be hh:mm (Anna 2026-05-13 feedback)
+    uhrzeit_raw = _kv(ws, "Uhrzeit") or "00:00"
+    if isinstance(uhrzeit_raw, time):
+        uhrzeit = uhrzeit_raw.strftime("%H:%M")
+    else:
+        uhrzeit = str(uhrzeit_raw).strip()
+        if not _is_hhmm(uhrzeit):
+            raise LDInputError(
+                f"Uhrzeit muss im Format hh:mm sein, nicht '{uhrzeit}'."
+            )
 
     def yesno(key: str) -> bool:
         raw = _required_kv(ws, key).lower().strip()
@@ -111,13 +136,23 @@ def _parse_testprotokoll(wb) -> Testprotokoll:
             ) from e
 
     stufenlaenge_raw = _kv(ws, "Stufenlänge (m)")
+
+    # Anfangsbelastung (renamed from Anfangsintensität per Anna 2026-05-13).
+    # The new key is preferred; the old key is no longer accepted — input templates
+    # are regenerated alongside this change.
+    anfangsbelastung_raw = _required_kv(ws, "Anfangsbelastung")
+
+    # Optional post-exertion lactate (Anna 2026-05-13 — recovery indicator).
+    nachbel_3 = _float_or_none(_kv(ws, "Nachbelastungslaktat 3min (mmol/l)"))
+    nachbel_5 = _float_or_none(_kv(ws, "Nachbelastungslaktat 5min (mmol/l)"))
+
     return Testprotokoll(
         testdatum=test_date,
-        uhrzeit=str(_kv(ws, "Uhrzeit") or "00:00"),
+        uhrzeit=uhrzeit,
         durchfuehrungsort=_required_kv(ws, "Durchführungsort"),
         testleiter=_required_kv(ws, "Testleiter"),
         geraet=_required_kv(ws, "Gerät"),
-        anfangsintensitaet=float(_required_kv(ws, "Anfangsintensität")),
+        anfangsbelastung=float(anfangsbelastung_raw),
         stufeninkrement=float(_required_kv(ws, "Stufeninkrement")),
         stufendauer_min=float(_required_kv(ws, "Stufendauer (min)")),
         stufenlaenge_m=(int(stufenlaenge_raw) if stufenlaenge_raw else None),
@@ -125,7 +160,16 @@ def _parse_testprotokoll(wb) -> Testprotokoll:
         letzte_stufe_vollstaendig=letzte_voll,
         dauer_letzte_stufe_min=dauer_letzte,
         ausbelastung=yesno("Ausbelastung"),
+        nachbelastungslaktat_3min_mmol=nachbel_3,
+        nachbelastungslaktat_5min_mmol=nachbel_5,
     )
+
+
+_HHMM_RE = re.compile(r"^([01]?\d|2[0-3]):[0-5]\d$")
+
+
+def _is_hhmm(s: str) -> bool:
+    return bool(_HHMM_RE.match(s))
 
 
 def _parse_steps(wb) -> tuple[TestStep, ...]:

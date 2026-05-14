@@ -1,7 +1,8 @@
 # Leistungsdiagnostik — Automatisierungswerkzeug
 
-Automatische Auswertung von Laktatstufentests. Eingabe: xlsx → Ausgabe: Word-Bericht mit
-Laktatkurve, Schnittpunkttabelle, Trainingszonen und LLM-Interpretation auf Deutsch.
+Automatische Auswertung von Laktatstufentests. Eingabe: xlsx → Ausgabe: 5-seitiger
+Word-Bericht (DIN A4 quer) mit Laktatkurve, Schnittpunkttabelle, Trainingszonen
+und einer von Codex erstellten Interpretation auf Deutsch.
 
 ---
 
@@ -22,17 +23,26 @@ cd ~/Desktop/leistungsdiagnostik
 uv sync
 ```
 
-### Codex CLI (für den Dialogmodus)
+Optional — wenn das **visuelle Zonen-Tool** genutzt werden soll:
+
+```bash
+uv pip install -e ".[visual]"
+```
+
+### Codex CLI
 
 ```bash
 npm install -g @openai/codex
 codex login    # mit ChatGPT-Account einloggen
 ```
 
+Anna's ChatGPT-Account übernimmt die Interpretationsprosa — das Werkzeug selbst
+macht keine API-Calls und braucht keinen API-Key.
+
 ### Desktop-Verknüpfung
 
-Das Skript `Leistungsdiagnostik.command` auf dem Desktop öffnet ein Terminal im Werkzeugordner
-und startet Codex. Einmalig ausführbar machen:
+Das Skript `Leistungsdiagnostik.command` auf dem Desktop öffnet ein Terminal im
+Werkzeugordner und startet Codex. Einmalig ausführbar machen:
 
 ```bash
 chmod +x ~/Desktop/Leistungsdiagnostik.command
@@ -42,21 +52,37 @@ chmod +x ~/Desktop/Leistungsdiagnostik.command
 
 ## Täglicher Betrieb
 
-1. Eingabedatei `Athlet_DATUM.xlsx` aus `templates/input_template.xlsx` erstellen.
-2. Datei in `~/Leistungsdiagnostik/tool/input/` ablegen.
+1. Eingabedatei `XY_LD_Sportart_JJ_MM_TT.xlsx` aus `templates/input_template.xlsx`
+   erstellen. Der genaue Dateiname spielt für die Pipeline keine Rolle — das
+   Werkzeug normalisiert den Ausgabenamen aus Athlet:innendaten und Testdatum.
+2. Datei in `~/Desktop/leistungsdiagnostik/input/` ablegen.
 3. `Leistungsdiagnostik.command` auf dem Desktop doppelklicken.
 4. `/ld-report` tippen.
-5. Zonen bestätigen oder anpassen → Enter.
-6. Endbericht liegt in `output/`.
+5. Vorgeschlagene Zonen prüfen → bestätigen oder anpassen → Enter.
+6. Endbericht liegt in `output/` als `XY_LD_Sportart_JJ_MM_TT_final_v<n>.docx`.
 
-### Fallback (ohne Codex)
+### Alternativer Ablauf: Visuelles Zonen-Tool
+
+Nach der ersten Pipeline-Ausführung können Zonen statt im Codex-Dialog auch
+grafisch verschoben werden:
 
 ```bash
-cd ~/Leistungsdiagnostik/tool
-uv run python -m ld.run input/Athlet.xlsx --interpret
+uv run streamlit run src/ld/zone_tool.py
 ```
 
-Benötigt `OPENAI_API_KEY` in einer `.env`-Datei.
+Im Browser öffnet sich ein Slider-UI mit Live-Vorschau des Plots. Beim
+"Übernehmen"-Klick werden die neuen Grenzen über `ld.zones_override` zurück in
+den Bericht geschrieben.
+
+### Direkter Pipeline-Aufruf (ohne Codex)
+
+```bash
+uv run python -m ld.run input/<datei.xlsx>
+```
+
+Schreibt JSON + Draft-Bericht (ohne Interpretationsabsätze). Zur
+Interpretation kann Codex später aufgerufen werden — der Pipeline-Schritt
+ist deterministisch und unabhängig.
 
 ---
 
@@ -71,10 +97,18 @@ git -C ~/Desktop/leistungsdiagnostik pull && uv sync
 ## Entwicklerhinweise (Christopher)
 
 - Protokolle: `src/ld/protocols/`  — lauf.py, rad.py, unspezifisch.py
-- Mathematik:  `src/ld/protocols/_common.py` — polyfit, HF-Fit, Aliquot, Schnittpunkte
-- Tests:       `uv run pytest`
-- Vorlagen:    `templates/input_template.xlsx`, `templates/report.docx`
-- Spec:        `samples/26_05_LD_Dateneingabe.docx`
+- Mathematik: `src/ld/protocols/_common.py` — polyfit, HF-Fit, Aliquot, Schnittpunkte
+- Zonen: `src/ld/zones.py` (Vorschlag) + `src/ld/zones_override.py` (manuelle Anpassung)
+- Pflichtprüfungen: `src/ld/pflichtpruefungen.py`
+- Plot: `src/ld/plots.py` — mit farbigen Trainingszonen-Banden
+- Report-Template: `templates/report.docx` (generiert via `build_report_template.py`)
+- Eingabe-Template: `templates/input_template.xlsx` (generiert via `build_template.py`)
+- Visuelles Zonen-Tool: `src/ld/zone_tool.py` (Streamlit)
+- Codex-Anweisungen: `.codex/prompts/ld-report.md`
+- Tests: `uv run python -m pytest`
+- Spec: `samples/26_05_LD_Dateneingabe.docx`
+- Korrekturfeedback (Round 1): `feedback/round1/`
 
-Alle Ausgaben sind deterministisch (Python). Die LLM-Interpretation ist ein Entwurf;
-Anna-Maria bearbeitet den finalen Word-Bericht selbst.
+Alle Ausgaben (Zahlen, Tabellen, Plot, Word-Doc) sind deterministisch.
+Nicht-deterministische Interpretationsprosa wird ausschließlich von Codex
+erzeugt — kein API-Call aus dem Werkzeug.

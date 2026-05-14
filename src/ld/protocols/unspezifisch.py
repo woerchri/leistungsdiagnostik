@@ -18,7 +18,7 @@ def analyze(test_run: TestRun) -> AnalysisResult:
     rows = intersection_table(
         cubic=cubic,
         hf_linear=hf_linear,
-        intensitaet_min=test_run.testprotokoll.anfangsintensitaet,
+        intensitaet_min=test_run.testprotokoll.anfangsbelastung,
         intensitaet_max=stufe_measured_max,
         is_lauf=False,
     )

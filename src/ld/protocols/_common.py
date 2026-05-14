@@ -52,7 +52,7 @@ def compute_vmax(test_run: TestRun) -> float:
         )
     if proto.dauer_letzte_stufe_min >= proto.stufendauer_min:
         return float(last.intensitaet)
-    base = steps[-2].intensitaet if len(steps) >= 2 else proto.anfangsintensitaet - proto.stufeninkrement
+    base = steps[-2].intensitaet if len(steps) >= 2 else proto.anfangsbelastung - proto.stufeninkrement
     fraction = proto.dauer_letzte_stufe_min / proto.stufendauer_min
     return float(base + fraction * proto.stufeninkrement)
 
@@ -64,10 +64,16 @@ def intersection_table(
     intensitaet_max: float,  # last *measured* step's intensity (not aliquot v_max)
     is_lauf: bool,
 ) -> tuple[IntersectionRow, ...]:
-    """For each fixed lactate target, find the smallest real root of cubic(x)=target
+    """For each fixed lactate target, find a real root of cubic(x)=target
     in [intensitaet_min, intensitaet_max + 20%].
-    Below-range roots → floor at intensitaet_min - 1 (matches historical xlsx behavior).
-    Above-range → None.
+
+    Multi-root handling (per Anna 2026-05-13 feedback):
+      - If multiple in-range roots: pick the LARGEST x (the cubic can wiggle
+        when lactate plateaus; the later crossing is the physiologically
+        relevant one once load is high enough to sustain the target).
+      - If no in-range root: return an IntersectionRow with all fields None.
+        The report layer drops these rows entirely (no `-`, no extrapolated
+        floor values).
     """
     rows: list[IntersectionRow] = []
     # 20% extrapolation window covers lactate values just beyond last measured step
@@ -82,13 +88,8 @@ def intersection_table(
             if abs(r.imag) < 1e-6 and r.real > 0
         )
         in_range = [r for r in real_positive if intensitaet_min <= r <= upper]
-        if in_range:
-            x = in_range[0]
-        elif real_positive and max(real_positive) < intensitaet_min:
-            # All roots below range → floor display (start - 1), matches historical
-            x = intensitaet_min - 1.0
-        else:
-            x = None
+        # Pick LARGEST in-range root — see docstring.
+        x = in_range[-1] if in_range else None
 
         if x is None:
             rows.append(IntersectionRow(target, None, None, None))
@@ -128,7 +129,7 @@ def diagram_title(test_run: TestRun) -> str:
         "triathlon-lauf": "Triathlon-Lauf",
         "unspezifisch": "Unspezifisch",
     }[test_run.athlete.sportart]
-    start = _trim_num(proto.anfangsintensitaet)
+    start = _trim_num(proto.anfangsbelastung)
     inc = _trim_num(proto.stufeninkrement)
     dur = _trim_num(proto.stufendauer_min)
     datum = proto.testdatum.strftime("%d.%m.%Y")
