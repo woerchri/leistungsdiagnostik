@@ -15,6 +15,16 @@ node --version          # muss erscheinen; falls nicht: brew install node
 uv --version            # muss erscheinen; falls nicht: curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
+**Optional, aber empfohlen**: LibreOffice für Render-QA (5-Seiten-Test im CI):
+
+```bash
+brew install --cask libreoffice
+```
+
+Ohne LibreOffice werden die Render-QA-Tests (`tests/e2e/test_reference_5pages.py`)
+übersprungen statt zu scheitern — das 5-Seiten-Layout ist dann nicht automatisch
+gegen Regressionen abgesichert.
+
 ### Installation
 
 ```bash
@@ -108,6 +118,9 @@ git -C ~/Desktop/leistungsdiagnostik pull && uv sync
 - Tests: `uv run python -m pytest`
 - Spec: `samples/26_05_LD_Dateneingabe.docx`
 - Korrekturfeedback (Round 1): `feedback/round1/`
+- Produktverfeinerung (Round 2): `feedback/round2/` inkl. [IMPLEMENTATION_PLAN.md](feedback/round2/IMPLEMENTATION_PLAN.md)
+- Render-QA: `src/ld/render_qa.py` (LibreOffice → PDF → Seitenzahl)
+- **RPE-Skala**: 0-10 (Borg CR10) — Round 2; alte 6-20-Werte werden vom Parser abgewiesen
 
 Alle Ausgaben (Zahlen, Tabellen, Plot, Word-Doc) sind deterministisch.
 Nicht-deterministische Interpretationsprosa wird ausschließlich von Codex

@@ -11,10 +11,13 @@ import numpy as np
 from ld.types import AnalysisResult
 
 
-_FIGSIZE = (10.0, 6.0)
+_FIGSIZE = (14.0, 3.5)  # Wide+short — Page 2 must hold Daten + Rohdaten + Plot.
 _DPI = 150
 _COLOR_LAKTAT = "#E63946"   # Rot — Laktatkurve
 _COLOR_HF = "#1F77B4"        # Blau — HF-Linie
+_COLOR_VMAX = "#0B2545"     # Dunkelblau — vmax-Markierung
+_MARKER_LAKTAT = "s"        # Quadrat (Anna 2026-05-13 Round 2 — unterscheidbar von HF)
+_MARKER_HF = "o"            # Kreis
 
 # Training-zone background palette (Anna 2026-05-13 — transparent, hochwertig).
 # Names mirror the German feedback labels. Alpha tuned for printability without
@@ -44,16 +47,22 @@ def render_main_diagram(result: AnalysisResult, out_dir: Path) -> Path:
         s.herzfrequenz_bpm if s.herzfrequenz_bpm is not None else np.nan for s in steps
     ])
 
-    # X-axis range: include start, last measured step AND v_max (whichever is
-    # rightmost), plus padding so the last data point stays visible.
-    # Bug Anna flagged 2026-05-13: "letzter Datenpunkt ist nicht mehr sichtbar".
+    # X-axis layout (Round 2 P0-4):
+    # - `x_data_max` = last MEASURED intensity. Fit lines must not extend past it,
+    #   so the chart never suggests a Laktat/HF value at v_max if v_max was
+    #   aliquot-derived from an incomplete final step.
+    # - `x_max` = visible right edge. Padded past max(v_max, x_data_max) so the
+    #   vmax marker has breathing room when v_max > x_data_max.
     x_min = proto.anfangsbelastung
     x_data_max = float(np.nanmax(x_data)) if len(x_data) else x_min
     x_rightmost = max(result.v_max, x_data_max)
-    x_padding = proto.stufeninkrement * 0.5  # half an increment of breathing room
+    x_padding = proto.stufeninkrement * 0.5
     x_max = x_rightmost + x_padding
 
-    x_fine = np.linspace(x_min, x_max, 200)
+    # Fit lines are constrained to the measured range. Anna 2026-05-13 Round 2:
+    # "Plot endet am letzten Messpunkt", "Laktatfit nicht irreführend über
+    # Messbereich hinaus", "HF-Linie bis letztem HF-Messpunkt".
+    x_fine = np.linspace(x_min, x_data_max, 200)
     lk_fit = np.array([result.cubic.predict(x) for x in x_fine])
     hf_fit = np.array([result.hf_linear.predict(x) for x in x_fine])
 
@@ -62,9 +71,9 @@ def render_main_diagram(result: AnalysisResult, out_dir: Path) -> Path:
     # --- Training-zone background bands (drawn FIRST so data plots over them).
     _draw_zone_bands(ax_lk, result, x_min=x_min, x_max=x_max)
 
-    # --- Laktat (left axis, red).
+    # --- Laktat (left axis, red). Square markers per Round 2 — distinct from HF.
     ax_lk.plot(x_fine, lk_fit, color=_COLOR_LAKTAT, linewidth=2, zorder=3)
-    ax_lk.plot(x_data, lk_data, "o", color=_COLOR_LAKTAT, markersize=6, zorder=4)
+    ax_lk.plot(x_data, lk_data, _MARKER_LAKTAT, color=_COLOR_LAKTAT, markersize=6, zorder=4)
     ax_lk.set_xlabel(_x_label_de(result))
     ax_lk.set_ylabel("Laktat (mmol/l)", color=_COLOR_LAKTAT)
     ax_lk.tick_params(axis="y", labelcolor=_COLOR_LAKTAT)
@@ -76,12 +85,23 @@ def render_main_diagram(result: AnalysisResult, out_dir: Path) -> Path:
     lk_tick = 1 if lk_max <= 7 else 2
     ax_lk.set_yticks(np.arange(0, lk_max + 1.0 + 0.1, lk_tick))
 
-    # --- HF (right axis, blue).
+    # --- HF (right axis, blue). Circle markers — distinct from Laktat squares.
     ax_hf = ax_lk.twinx()
     ax_hf.plot(x_fine, hf_fit, color=_COLOR_HF, linewidth=2, zorder=3)
-    ax_hf.plot(x_data, hf_data, "o", color=_COLOR_HF, markersize=6, zorder=4)
+    ax_hf.plot(x_data, hf_data, _MARKER_HF, color=_COLOR_HF, markersize=6, zorder=4)
     ax_hf.set_ylabel("Herzfrequenz (bpm)", color=_COLOR_HF)
     ax_hf.tick_params(axis="y", labelcolor=_COLOR_HF)
+
+    # --- vmax marker (Round 2): when v_max > x_data_max (aliquot from incomplete
+    # final step), show it as a dashed vertical line + label — NOT as a data point.
+    if result.v_max > x_data_max + 1e-6:
+        ax_lk.axvline(
+            result.v_max, color=_COLOR_VMAX, linestyle="--", linewidth=1.2, zorder=2,
+        )
+        ax_lk.text(
+            result.v_max, lk_max + 0.5, "vmax (aliquot)",
+            ha="center", va="bottom", fontsize=8, color=_COLOR_VMAX, zorder=2,
+        )
 
     # Y-axis (HF): min = round-down(min-10), max = round-up(max) + 10
     # (Anna 2026-05-13 — old +0 was clipping the top marker visually).

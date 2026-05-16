@@ -37,42 +37,42 @@
         "intensitaet": 8.0,
         "herzfrequenz_bpm": 150,
         "laktat_mmol": 1.7,
-        "rpe": 10
+        "rpe": 2
       },
       {
         "stufe": 2,
         "intensitaet": 9.0,
         "herzfrequenz_bpm": 160,
         "laktat_mmol": 1.8,
-        "rpe": 12
+        "rpe": 3
       },
       {
         "stufe": 3,
         "intensitaet": 10.0,
         "herzfrequenz_bpm": 165,
         "laktat_mmol": 1.8,
-        "rpe": 12
+        "rpe": 3
       },
       {
         "stufe": 4,
         "intensitaet": 11.0,
         "herzfrequenz_bpm": 178,
         "laktat_mmol": 2.8,
-        "rpe": 15
+        "rpe": 6
       },
       {
         "stufe": 5,
         "intensitaet": 12.0,
         "herzfrequenz_bpm": 186,
         "laktat_mmol": 4.3,
-        "rpe": 18
+        "rpe": 9
       },
       {
         "stufe": 6,
         "intensitaet": 13.0,
         "herzfrequenz_bpm": 197,
         "laktat_mmol": 6.6,
-        "rpe": 20
+        "rpe": 10
       }
     ],
     "coaching": {

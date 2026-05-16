@@ -27,7 +27,7 @@ ausschließlich aus `uv run python -m ld.run`.
    - Laktat-Schnittpunkttabelle als Markdown — NUR Zeilen mit gültigem
      `intensitaet` (None-Zeilen werden weggelassen).
    - Vorgeschlagene Zonen Z1–Z6: zeige Bereich oder "MAX" je nach `is_max_zone`
-     / `is_open_lower`.
+     / `is_open_lower`. **RPE-Skala: 0-10 (Borg CR10)** — Anna 2026-05-13 Round 2.
    - Pflichtprüfungen: jede `message_de` mit "⚠️"; wenn alle OK: "Pflichtprüfungen: OK".
    - Diagramm-Hinweis: `output/<basename>/diagramm.png`.
 
@@ -45,35 +45,55 @@ ausschließlich aus `uv run python -m ld.run`.
    Lies das aktualisierte JSON erneut.
 
 6. **Interpretation schreiben.** Erstelle `output/<basename>_interpretation.json`
-   mit GENAU diesen vier Schlüsseln (Deutsch, flüssige Prosa, 1–3 Absätze pro
-   Schlüssel):
+   mit GENAU diesen Schlüsseln (Deutsch, flüssige Prosa):
    ```json
    {
-     "zusammenfassung": "...",
-     "schwellen": "...",
-     "empfehlungen": "...",
-     "risiko": "..."   // optional — interne Notiz für Trainerseite
+     "zusammenfassung": "...",                  // 120-150 Wörter
+     "schwellen": "...",                        // 120-150 Wörter
+     "coaching_ausblick_3_4_wochen": "...",     // 3-5 Leitlinien, max 200 Wörter
+     "ernaehrung": "...",                       // 1 Absatz, max 120 Wörter
+     "risiko": "..."                            // optional — interne Notiz Seite 5
    }
    ```
 
-   **Inhaltsregeln (Anna 2026-05-13 Feedback):**
+   **Inhaltsregeln (Anna 2026-05-13 Round 1+2):**
 
    - **Sprache:** Deutsch, direkt mit Vorname ansprechen ("Rainier, deine
      Schwelle liegt bei…"). NIE "Athlet:in" oder "Teilnehmer:in" sagen.
    - **Maximalgeschwindigkeit** statt "v_max" oder "maximale Geschwindigkeit".
-   - **Zusammenfassung:** Kernpunkte des Tests, kompakt und persönlich. Was sticht
-     heraus? Erfasse Kurvenverlauf, HF-Verhalten und subjektive Belastung in 2–4
-     Sätzen.
-   - **Schwellen & Zonen:** Verweise auf die Schwellenschnittpunkt-Tabelle. KEINE
-     Zahlen aus der Tabelle wiederholen — nur die Logik erklären (wo liegt die
-     individuelle aerobe Schwelle, wo der Übergang zur Schwellenleistung, wie
-     beeinflusst die Kurvenform die Zoneneinteilung).
-   - **Trainingsbereiche-Absatz nicht erzeugen** — die Tabelle reicht. Wenn die
-     Nutzerin nach Bereichen fragt, antworte aus dem Tabellenkontext heraus.
-   - **Empfehlungen:** Konkrete Trainingsableitungen. Kompakt, klar, umsetzbar.
+   - **RPE auf 0-10 (Borg CR10)** — wenn du subjektive Belastung erwähnst,
+     auf dieser Skala formulieren.
+   - **Zusammenfassung (120-150 Wörter):** Kernpunkte des Tests, kompakt und
+     persönlich. Kurvenverlauf, HF-Reaktion, RPE-Muster und Testqualität
+     in menschlicher Sprache. Etwas ausführlicher als Round 1, aber kein
+     akademischer Gutachten-Stil.
+   - **Schwellen & Zonen (120-150 Wörter):** Verweise auf die
+     Schwellenschnittpunkt-Tabelle. KEINE Zahlen aus der Tabelle wiederholen.
+     Erkläre WARUM die Zonen so gesetzt wurden: wo liegt die individuelle
+     aerobe Schwelle, wo der Übergang zur Schwellenleistung, wie beeinflusst
+     die Kurvenform die Zoneneinteilung.
+   - **Trainingsbereiche-Absatz nicht erzeugen** — die Tabelle reicht.
+   - **Nächste 3-4 Wochen (max 200 Wörter):** 3-5 konkrete Leitlinien. NICHT
+     einen fertigen Wochenplan erfinden, wenn Trainingskalender und
+     Verfügbarkeit nicht im Input stehen. Gute Form: "In den kommenden
+     3-4 Wochen sollte der Fokus auf … liegen." Ziel: Zusammenarbeit mit
+     Trainerin einleiten, nicht den Plan ersetzen.
+   - **Energie & Regeneration (max 120 Wörter):** allgemeine, evidenzbasierte
+     Empfehlungen vor/während/nach Einheiten. KEINE Kalorienpläne, KEINE
+     medizinische Diätberatung. Beispielrahmen:
+     - Vor intensiven/längeren Einheiten kohlenhydratbetont und verträglich.
+     - Bei Einheiten >60-75 min Kohlenhydrate/Flüssigkeit planen.
+     - Nach belastenden Einheiten Kohlenhydrate plus Protein und Flüssigkeit.
+     Quellenanker für deine eigene Orientierung (NICHT zitieren im Output):
+     ACSM Joint Position Statement 2016 (PMID 26891166), ISSN Nutrient
+     Timing 2017 (PMID 28919842).
    - **risiko** (optional, nur intern auf Seite 5): orthopädische Auffälligkeiten,
      Pflichtprüfungen-Bedeutung, Testqualitätsbewertung. Wenn nichts Auffälliges:
      `null` oder Schlüssel weglassen.
+
+   **Hinweis Übergangskompatibilität:** Wenn du noch den alten Schlüssel
+   `empfehlungen` schreibst, wird er bis auf Weiteres in
+   `coaching_ausblick_3_4_wochen` gemappt — bevorzugt aber den neuen Namen.
 
    **Fachliche Leitplanken — HIT/hochintensives Training:**
 

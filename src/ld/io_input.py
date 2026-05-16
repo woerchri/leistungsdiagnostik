@@ -52,7 +52,16 @@ def _required_kv(ws, key: str) -> str:
 
 def _parse_athlete(wb) -> Athlete:
     ws = _require_sheet(wb, "Athlet")
-    sportart_raw = _required_kv(ws, "Sportart").lower().strip()
+    # Sportart lives on the Testprotokoll sheet (Anna 2026-05-13 Round 1).
+    # Legacy templates may still have it on Athlet — accept either to keep old
+    # fixtures parseable, but prefer the Testprotokoll location.
+    proto_ws = _require_sheet(wb, "Testprotokoll")
+    sportart_raw_value = _kv(proto_ws, "Sportart") or _kv(ws, "Sportart")
+    if not sportart_raw_value:
+        raise LDInputError(
+            "Pflichtfeld 'Sportart' fehlt — bitte im Testprotokoll-Blatt ergänzen."
+        )
+    sportart_raw = str(sportart_raw_value).lower().strip()
     SUPPORTED = {"lauf", "rad", "triathlon-rad", "triathlon-lauf", "unspezifisch"}
     if sportart_raw not in SUPPORTED:
         raise LDInputError(
@@ -192,13 +201,25 @@ def _parse_steps(wb) -> tuple[TestStep, ...]:
         if stufe_val is None or stufe_val == "":
             break
         try:
+            rpe_val = _int_or_none(ws.cell(row=row_idx, column=5).value)
+            # RPE 0-10 (Borg CR10) — Anna 2026-05-13 Round 2.
+            # Old Borg 6-20 scale values would silently corrupt zone metadata;
+            # reject explicitly so the user notices the migration.
+            if rpe_val is not None and not (0 <= rpe_val <= 10):
+                raise LDInputError(
+                    f"Zeile {row_idx} auf 'Testdaten': RPE {rpe_val} liegt "
+                    f"außerhalb der CR10-Skala (0-10). Bitte alte Borg-6-20-"
+                    f"Werte auf 0-10 umrechnen."
+                )
             steps.append(TestStep(
                 stufe=int(stufe_val),
                 intensitaet=float(ws.cell(row=row_idx, column=2).value),
                 herzfrequenz_bpm=_int_or_none(ws.cell(row=row_idx, column=3).value),
                 laktat_mmol=_float_or_none(ws.cell(row=row_idx, column=4).value),
-                rpe=_int_or_none(ws.cell(row=row_idx, column=5).value),
+                rpe=rpe_val,
             ))
+        except LDInputError:
+            raise
         except (ValueError, TypeError) as e:
             raise LDInputError(
                 f"Zeile {row_idx} auf 'Testdaten' enthält ungültige Werte: {e}"

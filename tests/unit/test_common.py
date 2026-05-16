@@ -20,13 +20,14 @@ from ld.types import (
 from datetime import date
 
 
+# RPE on Borg CR10 (0-10) — Anna 2026-05-13 Round 2.
 _RAINIER_STEPS = (
-    TestStep(stufe=1, intensitaet=7.0,  herzfrequenz_bpm=133, laktat_mmol=1.9, rpe=9),
-    TestStep(stufe=2, intensitaet=8.0,  herzfrequenz_bpm=141, laktat_mmol=2.8, rpe=9),
-    TestStep(stufe=3, intensitaet=9.0,  herzfrequenz_bpm=150, laktat_mmol=3.0, rpe=14),
-    TestStep(stufe=4, intensitaet=10.0, herzfrequenz_bpm=159, laktat_mmol=3.8, rpe=16),
-    TestStep(stufe=5, intensitaet=11.0, herzfrequenz_bpm=167, laktat_mmol=5.2, rpe=17),
-    TestStep(stufe=6, intensitaet=12.0, herzfrequenz_bpm=173, laktat_mmol=7.9, rpe=18),
+    TestStep(stufe=1, intensitaet=7.0,  herzfrequenz_bpm=133, laktat_mmol=1.9, rpe=2),
+    TestStep(stufe=2, intensitaet=8.0,  herzfrequenz_bpm=141, laktat_mmol=2.8, rpe=2),
+    TestStep(stufe=3, intensitaet=9.0,  herzfrequenz_bpm=150, laktat_mmol=3.0, rpe=5),
+    TestStep(stufe=4, intensitaet=10.0, herzfrequenz_bpm=159, laktat_mmol=3.8, rpe=7),
+    TestStep(stufe=5, intensitaet=11.0, herzfrequenz_bpm=167, laktat_mmol=5.2, rpe=8),
+    TestStep(stufe=6, intensitaet=12.0, herzfrequenz_bpm=173, laktat_mmol=7.9, rpe=9),
 )
 
 _RAINIER_PROTO = Testprotokoll(

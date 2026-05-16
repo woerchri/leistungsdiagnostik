@@ -41,8 +41,9 @@ ws.column_dimensions["C"].width = 45
 
 hdr(ws, 1, 1, "Feld"); hdr(ws, 1, 2, "Wert"); hdr(ws, 1, 3, "Hinweis")
 
+# Anna 2026-05-13 Round 1: "Sportart aus Athletendaten entfernen und bei
+# Testprotokoll anzeigen" — moved to Testprotokoll sheet below.
 rows = [
-    ("Sportart",           "Lauf",          "Erlaubt: lauf | rad | triathlon-rad | triathlon-lauf | unspezifisch"),
     ("Vorname",            "Rainier",        ""),
     ("Name",               "Matzinger",      ""),
     ("Email",              "rainier@example.com", "Optional"),
@@ -68,6 +69,7 @@ hdr(ws2, 1, 1, "Feld"); hdr(ws2, 1, 2, "Wert"); hdr(ws2, 1, 3, "Hinweis")
 
 import datetime
 proto_rows = [
+    ("Sportart",                           "Lauf",                        "Erlaubt: lauf | rad | triathlon-rad | triathlon-lauf | unspezifisch"),
     ("Testdatum",                          "23.05.2024",                  "Format: TT.MM.JJJJ"),
     ("Uhrzeit",                            "14:00",                       "Format: hh:mm"),
     ("Durchführungsort",                   "Laufcamp Achensee",           ""),
@@ -99,20 +101,22 @@ headers = ["Stufe", "Intensität", "Herzfrequenz", "Laktat", "RPE"]
 for col, h in enumerate(headers, start=1):
     hdr(ws3, 1, col, h)
 
-# RPE note in column G (outside the data range, visible to user)
+# RPE note in column G (outside the data range, visible to user).
+# Anna 2026-05-13 Round 2: full migration to Borg CR10 (0-10) — old 6-20 is rejected.
 note_cell = ws3.cell(row=1, column=7,
-    value="RPE-Skala: 6-20 (Borg). 6=keine, 20=maximale Belastung")
+    value="RPE-Skala: 0-10 (Borg CR10). 0 = keine Anstrengung, 10 = maximale Anstrengung")
 note_cell.fill = NOTE_FILL
 note_cell.font = Font(name="Arial", italic=True, color="7F6000")
 
-# Rainier's data — 6 complete steps (step 6 is the last measured, incomplete)
+# Rainier's data — 6 measured steps (step 6 is incomplete; aliquot vmax).
+# RPE values on CR10 0-10 (Borg→CR10 conversion: 9→2, 14→5, 16→7, 17→8, 18→9).
 data = [
-    (1, 7.0,  133, 1.9, 9),
-    (2, 8.0,  141, 2.8, 9),
-    (3, 9.0,  150, 3.0, 14),
-    (4, 10.0, 159, 3.8, 16),
-    (5, 11.0, 167, 5.2, 17),
-    (6, 12.0, 173, 7.9, 18),
+    (1, 7.0,  133, 1.9, 2),
+    (2, 8.0,  141, 2.8, 2),
+    (3, 9.0,  150, 3.0, 5),
+    (4, 10.0, 159, 3.8, 7),
+    (5, 11.0, 167, 5.2, 8),
+    (6, 12.0, 173, 7.9, 9),
 ]
 for i, row_data in enumerate(data, start=2):
     for col, val in enumerate(row_data, start=1):

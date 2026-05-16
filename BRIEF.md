@@ -188,12 +188,14 @@ CI: `uv run pytest` locally. No GitHub Actions.
 - Plot axis labels: "Geschwindigkeit (km/h)" / "Leistung (W)" / "Stufe", "Laktat (mmol/l)", "Herzfrequenz (bpm)".
 - Plot title format from spec: `<Sport>_<Start>_<Increment>_<Duration>; <Date>` — e.g. "Lauf_8_1_4; 23.05.2024".
 - Zone names + Ziel der Zonen (from spec):
-  - Z1 — aktive Regeneration (RPE 0-2 on 0-10 scale, RPE 6-9 on 6-20 scale)
-  - Z2 — aerobe Basis (RPE 3-4 / 10-11)
-  - Z3 — metabolische Stabilität (RPE 5-6 / 12-14)
-  - Z4 — Schwellenleistung (RPE 7-8 / 15-17)
-  - Z5 — VO2max-Reize (RPE 9 / 18)
-  - Z6 — neuromuskulär (RPE 10 / 19-20)
+  - Z1 — aktive Regeneration (RPE 0-2 on Borg CR10 0-10 scale)
+  - Z2 — aerobe Basis (RPE 3-4)
+  - Z3 — metabolische Stabilität (RPE 5-6)
+  - Z4 — Schwellenleistung (RPE 7-8)
+  - Z5 — VO2max-Reize (RPE 9)
+  - Z6 — neuromuskulär (RPE 10)
+
+  *(Round 2 2026-05-13: legacy Borg 6-20 fully replaced by CR10 — parser rejects 6-20 values.)*
 - Interaction prompts in German.
 
 ## Output versioning

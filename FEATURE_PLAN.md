@@ -175,7 +175,7 @@ class TestStep:
     intensitaet: float
     herzfrequenz_bpm: int | None
     laktat_mmol: float | None
-    rpe: int | None            # 6-20 scale (Lauf) or 0-10 scale — spec uses 6-20 in historical xlsx, 0-10 in docx tables. TODO(spec): pin once we ask her.
+    rpe: int | None            # 0-10 (Borg CR10) — Anna Round 2 2026-05-13 fixed the scale; legacy 6-20 values are now rejected by the parser.
 
 
 @dataclass(frozen=True)
@@ -740,7 +740,7 @@ from ld.types import IntersectionRow, LinearFit, TrainingZone
 
 # Zone labels from spec (de_DE):
 ZONE_META: tuple[tuple[str, str, int, int], ...] = (
-    # (name, ziel, rpe_min, rpe_max)  — RPE on 0-10 scale per spec docx; mapping to 6-20 below
+    # (name, ziel, rpe_min, rpe_max)  — RPE on 0-10 Borg CR10 (Round 2 2026-05-13)
     ("Z1", "aktive Regeneration",      0, 2),
     ("Z2", "aerobe Basis",             3, 4),
     ("Z3", "metabolische Stabilität",  5, 6),
@@ -1777,7 +1777,7 @@ Acceptance: numbers match her hand-calculations on 2-3 historical cases per new 
 
 ## Open decisions to resolve during build
 
-1. **RPE scale**: spec docx uses 0-10; historical xlsx uses 6-20. Pin one in the input template (recommend 6-20 since that's what she actually used) and document the choice in `templates/input_template.xlsx`.
+1. ~~**RPE scale**~~ — RESOLVED Round 2 2026-05-13: Borg CR10 (0-10) is the canonical scale. Parser rejects 6-20 values; documented in `templates/input_template.xlsx` and `USAGE_GUIDE.md`.
 2. **Repo hosting**: Christopher decides — private GitHub recommended.
 3. **Codex version pin**: confirm a working version on Christopher's machine; record in README.
 

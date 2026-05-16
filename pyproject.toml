@@ -21,6 +21,7 @@ visual = [
 [dependency-groups]
 dev = [
     "docx2txt>=0.9",
+    "pypdf>=6.11.0",
     "pytest>=9.0.3",
     "pytest-snapshot>=0.9.0",
 ]

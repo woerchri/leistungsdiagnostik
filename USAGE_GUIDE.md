@@ -41,8 +41,10 @@ Die Vorlage hat vier Arbeitsblätter:
 - **Testdaten** — die eigentliche Messtabelle (Stufe | Intensität | HF | Laktat | RPE)
 - **Coaching** — Verletzungen, Stärken, Schwächen, Wettkämpfe
 
-> **RPE-Skala:** Verwende die Borg-Skala 6–20 (6 = keine Belastung, 20 = maximal).
+> **RPE-Skala:** Verwende die Borg-CR10-Skala 0–10 (0 = keine Anstrengung, 10 = maximal).
 > Diese Skala ist in der Vorlage als Hinweis in Spalte G der Testdaten eingetragen.
+> Hinweis: Alte Borg-6-20-Werte werden vom Parser abgewiesen — bei Migration eines
+> Altdatensatzes RPE-Werte umrechnen (Borg 9→2, 12→3, 14→5, 16→7, 18→9, 20→10).
 
 ### Schritt 2: Bericht generieren
 

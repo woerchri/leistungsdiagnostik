@@ -1,29 +1,32 @@
 """Build templates/report.docx — 5-page A4 landscape Leistungsdiagnostik report.
 
-Layout (per Anna 2026-05-13 feedback):
-  Page 1: Deckblatt (cover, no footer, no page number).
-  Page 2: Athletendaten + Testprotokoll + Plot.
-  Page 3: Schwellenschnittpunkte + Trainingsbereiche tables.
-  Page 4: Interpretation (Zusammenfassung, Schwellen & Zonen, Empfehlungen).
-          NOTE: separate "Trainingsbereiche" prose section removed by request.
-  Page 5: Trainerseite — intern (Pflichtprüfungen + Fachnotizen + Risikoanalyse
-          + Schwellenlogik + Trainernotizen).
+Round-2 layout (Anna 2026-05-13):
+  Page 1: Deckblatt — Logo, Titel, Name, Datum/Ort. KEIN "Erstellt von …".
+  Page 2: Athletendaten + Testprotokoll (nebeneinander) + Rohdaten-Tabelle + Plot.
+  Page 3: Schwellenschnittpunkte (Pivot, post-render) + Trainingsbereiche (zonenfarbig).
+  Page 4: Interpretation in 4 Blöcken — Zusammenfassung, Schwellen & Zonen,
+          Nächste 3-4 Wochen, Energie & Regeneration.
+  Page 5: Trainerseite intern — 2×2-Kachelgrid (Pflichtprüfungen, Risiko,
+          Schwellenlogik, Testqualität) + Trainernotizen-Tabelle.
+
+The pivot threshold table is built in `src/ld/report.py` after docxtpl renders,
+because its column count varies with the number of valid laktat targets.
+Zone-row coloring also happens in that post-render pass — docxtpl can't do
+conditional per-row cell shading cleanly.
 
 Brand:
   Primary  Dunkelblau   #0B2545
   Accent   Türkis       #16C5A5
   Text     Dunkelgrau   #2C2C2C
+  Footer   Mittelgrau   #6B6B6B  (ruhiger Markenanker, nicht Body-Grau)
   Lines    Hellgrau     #D1D5DB
-
-Tables use docxtpl `{%tr ... %}` row-loop syntax so the header appears exactly
-once per table (Anna 2026-05-13 — "nur ein Tabellenkopf").
 """
 from __future__ import annotations
 
 from pathlib import Path
 
 from docx import Document
-from docx.enum.section import WD_ORIENT, WD_SECTION
+from docx.enum.section import WD_ORIENT
 from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.oxml import OxmlElement
@@ -35,10 +38,11 @@ LOGO = Path("assets/logo_placeholder.png")
 OUT.parent.mkdir(exist_ok=True)
 
 # ── Brand tokens ─────────────────────────────────────────────────────────────
-PRIMARY = RGBColor(0x0B, 0x25, 0x45)   # Dunkelblau
-ACCENT  = RGBColor(0x16, 0xC5, 0xA5)   # Türkis
-TEXT    = RGBColor(0x2C, 0x2C, 0x2C)   # Dunkelgrau
-LINE    = RGBColor(0xD1, 0xD5, 0xDB)   # Hellgrau
+PRIMARY = RGBColor(0x0B, 0x25, 0x45)
+ACCENT  = RGBColor(0x16, 0xC5, 0xA5)
+TEXT    = RGBColor(0x2C, 0x2C, 0x2C)
+FOOTER_GREY = RGBColor(0x6B, 0x6B, 0x6B)
+LINE    = "D1D5DB"
 WHITE   = RGBColor(0xFF, 0xFF, 0xFF)
 
 # Trainer contact (Anna 2026-05-13)
@@ -46,26 +50,33 @@ CONTACT_EMAIL = "anna-maria@woerndle.at"
 CONTACT_PHONE = "+43 677 62150496"
 
 
-# ── Document setup: A4 landscape ─────────────────────────────────────────────
+# ── Document setup: A4 landscape, denser margins for the 5-page budget ──────
 doc = Document()
 
-# Configure base styles
 styles = doc.styles
 for sname in ("Normal",):
     style = styles[sname]
     style.font.name = "Calibri"
-    style.font.size = Pt(10.5)
+    style.font.size = Pt(10)
     style.font.color.rgb = TEXT
+
+# Set spacing-after on Normal to 4pt — base "tighter than Word default".
+pPr = styles["Normal"].element.get_or_add_pPr()
+spacing = OxmlElement("w:spacing")
+spacing.set(qn("w:after"), "80")  # 80 twips ~= 4pt
+spacing.set(qn("w:line"), "260")  # ~1.05 line height
+spacing.set(qn("w:lineRule"), "auto")
+pPr.append(spacing)
 
 section = doc.sections[0]
 section.orientation = WD_ORIENT.LANDSCAPE
 section.page_width  = Cm(29.7)
 section.page_height = Cm(21.0)
-section.top_margin    = Cm(1.6)
-section.bottom_margin = Cm(1.8)
-section.left_margin   = Cm(1.8)
-section.right_margin  = Cm(1.8)
-section.different_first_page_header_footer = True  # no footer on cover
+section.top_margin    = Cm(1.3)
+section.bottom_margin = Cm(1.4)
+section.left_margin   = Cm(1.6)
+section.right_margin  = Cm(1.6)
+section.different_first_page_header_footer = True
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -78,7 +89,7 @@ def _set_cell_bg(cell, hex_no_hash: str) -> None:
     tc_pr.append(shd)
 
 
-def _set_cell_borders(cell, color_hex: str = "D1D5DB", size_pt: int = 4) -> None:
+def _set_cell_borders(cell, color_hex: str = LINE, size_pt: int = 4) -> None:
     tc_pr = cell._tc.get_or_add_tcPr()
     borders = OxmlElement("w:tcBorders")
     for edge in ("top", "left", "bottom", "right"):
@@ -90,53 +101,53 @@ def _set_cell_borders(cell, color_hex: str = "D1D5DB", size_pt: int = 4) -> None
     tc_pr.append(borders)
 
 
-def heading(text: str, level: int = 1, color: RGBColor = PRIMARY) -> None:
+def _set_cell_no_borders(cell) -> None:
+    tc_pr = cell._tc.get_or_add_tcPr()
+    borders = OxmlElement("w:tcBorders")
+    for edge in ("top", "left", "bottom", "right"):
+        b = OxmlElement(f"w:{edge}")
+        b.set(qn("w:val"), "nil")
+        borders.append(b)
+    tc_pr.append(borders)
+
+
+def heading(text: str, level: int = 1, color: RGBColor = PRIMARY,
+            size_pt: int | None = None) -> None:
     p = doc.add_heading(text, level=level)
     if p.runs:
         run = p.runs[0]
         run.font.color.rgb = color
-        run.font.size = Pt({1: 16, 2: 13, 3: 11}.get(level, 11))
+        run.font.size = Pt(size_pt or {1: 15, 2: 12, 3: 10}.get(level, 10))
         run.font.bold = True
 
 
-def body(text: str, *, bold: bool = False, color: RGBColor = TEXT, size_pt: int = 10) -> None:
+def body(text: str, *, bold: bool = False, color: RGBColor = TEXT,
+         size_pt: int = 10, italic: bool = False) -> None:
     p = doc.add_paragraph(text)
     if p.runs:
         run = p.runs[0]
         run.font.size = Pt(size_pt)
         run.font.color.rgb = color
         run.font.bold = bold
+        run.font.italic = italic
 
 
 def page_break() -> None:
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
 
 
-def add_table_with_loop(*, headers: list[str], row_template: list[str], loop_var: str, items_var: str,
-                        header_widths_cm: list[float] | None = None) -> None:
-    """Build a table with ONE header row + a docxtpl `{%tr%}` body-row loop.
-
-    docxtpl's `{%tr%}` preprocessing REPLACES the entire `<w:tr>` containing
-    the tag with the equivalent Jinja tag (see template.py lines 180-191).
-    So tags MUST be on their own dedicated rows, not mixed with the data row.
-
-    Layout:
-      Row 0: header (visible, static)
-      Row 1: contains only `{%tr for X in ITEMS %}` — deleted at preprocess
-      Row 2: data row with `{{ X.field }}` placeholders — looped N times
-      Row 3: contains only `{%tr endfor %}` — deleted at preprocess
-    """
+def add_table_with_loop(*, headers: list[str], row_template: list[str], loop_var: str,
+                        items_var: str, header_widths_cm: list[float] | None = None,
+                        header_font_size: int = 9, body_font_size: int = 9) -> None:
+    """Single header + docxtpl row-loop body (1 visible row, repeated)."""
     t = doc.add_table(rows=4, cols=len(headers))
     t.alignment = WD_ALIGN_PARAGRAPH.CENTER
     t.autofit = False
-
-    # Column widths
     if header_widths_cm:
         for i, w in enumerate(header_widths_cm):
             for row in t.rows:
                 row.cells[i].width = Cm(w)
 
-    # ── Row 0: Header (visible) ──
     for i, h in enumerate(headers):
         cell = t.cell(0, i)
         cell.text = ""
@@ -147,15 +158,13 @@ def add_table_with_loop(*, headers: list[str], row_template: list[str], loop_var
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = para.add_run(h)
         run.font.bold = True
-        run.font.size = Pt(9.5)
+        run.font.size = Pt(header_font_size)
         run.font.color.rgb = WHITE
 
-    # ── Row 1: `{%tr for ... %}` tag row (gets eaten by docxtpl) ──
     tag_open = t.cell(1, 0)
     tag_open.text = ""
     tag_open.paragraphs[0].add_run("{%tr for " + loop_var + " in " + items_var + " %}")
 
-    # ── Row 2: Data row (visible, repeated per iteration) ──
     for i, tpl in enumerate(row_template):
         cell = t.cell(2, i)
         cell.text = ""
@@ -164,18 +173,16 @@ def add_table_with_loop(*, headers: list[str], row_template: list[str], loop_var
         para = cell.paragraphs[0]
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
         run = para.add_run(tpl)
-        run.font.size = Pt(10)
+        run.font.size = Pt(body_font_size)
         run.font.color.rgb = TEXT
 
-    # ── Row 3: `{%tr endfor %}` tag row (gets eaten by docxtpl) ──
     tag_close = t.cell(3, 0)
     tag_close.text = ""
     tag_close.paragraphs[0].add_run("{%tr endfor %}")
 
 
-def add_kv_table(rows: list[tuple[str, str]], *, key_width_cm: float = 5.5, val_width_cm: float = 9.0) -> None:
-    """Two-column key/value table without a header — used for athlete data,
-    test protocol summaries, etc."""
+def add_kv_table(rows: list[tuple[str, str]], *, key_width_cm: float = 4.5,
+                 val_width_cm: float = 7.5, font_size: int = 9) -> None:
     t = doc.add_table(rows=len(rows), cols=2)
     t.autofit = False
     for i, (k, v) in enumerate(rows):
@@ -184,17 +191,85 @@ def add_kv_table(rows: list[tuple[str, str]], *, key_width_cm: float = 5.5, val_
         _set_cell_borders(kc); _set_cell_borders(vc)
         kc.text = ""; vc.text = ""
         kr = kc.paragraphs[0].add_run(k)
-        kr.font.bold = True; kr.font.size = Pt(10); kr.font.color.rgb = PRIMARY
+        kr.font.bold = True; kr.font.size = Pt(font_size); kr.font.color.rgb = PRIMARY
         vr = vc.paragraphs[0].add_run(v)
-        vr.font.size = Pt(10); vr.font.color.rgb = TEXT
+        vr.font.size = Pt(font_size); vr.font.color.rgb = TEXT
+
+
+def add_two_column_kv(left_rows: list[tuple[str, str]],
+                      right_rows: list[tuple[str, str]],
+                      *, left_title: str, right_title: str) -> None:
+    """Render two key-value tables side-by-side inside a 2x1 outer table.
+    Used on Page 2 to fit Athletendaten + Testprotokoll on the same vertical band.
+    """
+    outer = doc.add_table(rows=2, cols=2)
+    outer.autofit = False
+    for col, w in enumerate((13.5, 13.5)):
+        for r in outer.rows:
+            r.cells[col].width = Cm(w)
+    for c in [outer.cell(r, c) for r in range(2) for c in range(2)]:
+        _set_cell_no_borders(c)
+
+    # Titles in row 0.
+    for col, title in enumerate((left_title, right_title)):
+        cell = outer.cell(0, col)
+        cell.paragraphs[0].text = ""
+        run = cell.paragraphs[0].add_run(title)
+        run.font.bold = True; run.font.size = Pt(12); run.font.color.rgb = PRIMARY
+
+    # Inner KV-tables in row 1, one per side.
+    for col, rows in enumerate((left_rows, right_rows)):
+        host_cell = outer.cell(1, col)
+        # Replace placeholder paragraph with a sub-table.
+        para = host_cell.paragraphs[0]
+        para.text = ""
+        inner = host_cell.add_table(rows=len(rows), cols=2)
+        inner.autofit = False
+        for i, (k, v) in enumerate(rows):
+            kc, vc = inner.cell(i, 0), inner.cell(i, 1)
+            kc.width = Cm(4.2); vc.width = Cm(8.5)
+            _set_cell_borders(kc); _set_cell_borders(vc)
+            kc.text = ""; vc.text = ""
+            kr = kc.paragraphs[0].add_run(k)
+            kr.font.bold = True; kr.font.size = Pt(8.5); kr.font.color.rgb = PRIMARY
+            vr = vc.paragraphs[0].add_run(v)
+            vr.font.size = Pt(8.5); vr.font.color.rgb = TEXT
+        # Remove the empty placeholder paragraph python-docx added inside the host cell.
+        if host_cell.paragraphs and not host_cell.paragraphs[0].text:
+            p_elem = host_cell.paragraphs[0]._element
+            p_elem.getparent().remove(p_elem)
+
+
+def add_2x2_grid(quadrants: list[tuple[str, str]]) -> None:
+    """A simple 2x2 grid for Page 5's internal coaching view.
+    Each quadrant: (title, body)."""
+    assert len(quadrants) == 4
+    t = doc.add_table(rows=2, cols=2)
+    t.autofit = False
+    for col in range(2):
+        for r in t.rows:
+            r.cells[col].width = Cm(13.5)
+    cells = [t.cell(r, c) for r in range(2) for c in range(2)]
+    for cell, (title, body_text) in zip(cells, quadrants):
+        _set_cell_borders(cell)
+        cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+        # Title
+        p = cell.paragraphs[0]
+        p.text = ""
+        run = p.add_run(title)
+        run.font.bold = True; run.font.size = Pt(10.5); run.font.color.rgb = PRIMARY
+        # Body — may include Jinja placeholders, so emit as separate paragraph
+        for line in body_text.split("\n"):
+            bp = cell.add_paragraph()
+            br = bp.add_run(line)
+            br.font.size = Pt(9); br.font.color.rgb = TEXT
 
 
 # ── PAGE 1: Deckblatt ────────────────────────────────────────────────────────
-# Empty paragraphs to push content vertically (cover is intentionally airy).
+# Round 2: airy cover, Anna-Maria-line removed, Sport-AnnaLytics-Subtext added.
 for _ in range(2):
     doc.add_paragraph()
 
-# Logo, mittig
 if LOGO.exists():
     p_logo = doc.add_paragraph()
     p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -203,110 +278,133 @@ if LOGO.exists():
 for _ in range(2):
     doc.add_paragraph()
 
-# Test title — sportart-aware
 title_p = doc.add_paragraph()
 title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 title_run = title_p.add_run("Leistungsdiagnostik {{ athlete.sportart_label }}")
 title_run.font.size = Pt(32); title_run.font.bold = True; title_run.font.color.rgb = PRIMARY
 
-# Spacer
+brand_p = doc.add_paragraph()
+brand_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+brand_run = brand_p.add_run("Sport AnnaLytics")
+brand_run.font.size = Pt(13); brand_run.font.color.rgb = ACCENT
+brand_run.font.italic = False
+
 for _ in range(2):
     doc.add_paragraph()
 
-# Athlete name
 name_p = doc.add_paragraph()
 name_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 name_run = name_p.add_run("{{ athlete.vorname }} {{ athlete.name }}")
-name_run.font.size = Pt(22); name_run.font.color.rgb = ACCENT
+name_run.font.size = Pt(22); name_run.font.color.rgb = TEXT
 
-# Date + location
 meta_p = doc.add_paragraph()
 meta_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 meta_run = meta_p.add_run("{{ testprotokoll.testdatum }}  ·  {{ testprotokoll.durchfuehrungsort }}")
-meta_run.font.size = Pt(13); meta_run.font.color.rgb = TEXT
-
-# Trainer
-for _ in range(4):
-    doc.add_paragraph()
-
-trainer_p = doc.add_paragraph()
-trainer_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-trainer_run = trainer_p.add_run("Erstellt von Anna-Maria Wörndle")
-trainer_run.font.size = Pt(11); trainer_run.font.color.rgb = TEXT; trainer_run.font.italic = True
-
-contact_p = doc.add_paragraph()
-contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-contact_run = contact_p.add_run(f"{CONTACT_EMAIL}  ·  {CONTACT_PHONE}")
-contact_run.font.size = Pt(10); contact_run.font.color.rgb = TEXT
+meta_run.font.size = Pt(12); meta_run.font.color.rgb = TEXT
 
 
-# ── PAGE 2: Athletendaten + Testprotokoll + Plot ─────────────────────────────
+# ── PAGE 2: Athletendaten + Testprotokoll + Rohdaten + Plot ─────────────────
 page_break()
-heading("Athletendaten", level=1)
+heading("Daten & Testablauf", level=1, size_pt=14)
 
-add_kv_table([
-    ("Name",            "{{ athlete.vorname }} {{ athlete.name }}"),
-    ("Email",           "{{ athlete.email }}"),
-    ("Geburtsjahr",     "{{ athlete.geburtsjahr }}"),
-    ("Alter",           "{{ athlete.alter }} Jahre"),
-    ("Geschlecht",      "{{ athlete.geschlecht }}"),
-    ("Gewicht",         "{{ athlete.gewicht_kg }} kg"),
-    ("Größe",           "{{ athlete.groesse_m }} m"),
-    ("Trainingsziel",   "{{ athlete.trainingsziel }}"),
-    ("Wettkampfziel",   "{{ athlete.wettkampfziel }}"),
-    ("Trainingsumfang", "{{ athlete.trainingsumfang_wo }}"),
-    ("Leistungsniveau", "{{ athlete.leistungsniveau }}"),
-])
+add_two_column_kv(
+    left_title="Athletendaten",
+    left_rows=[
+        ("Name",            "{{ athlete.vorname }} {{ athlete.name }}"),
+        ("Email",           "{{ athlete.email }}"),
+        ("Geburtsjahr",     "{{ athlete.geburtsjahr }}"),
+        ("Alter",           "{{ athlete.alter }}"),
+        ("Geschlecht",      "{{ athlete.geschlecht }}"),
+        ("Gewicht",         "{{ athlete.gewicht_kg }} kg"),
+        ("Größe",           "{{ athlete.groesse_m }} m"),
+        ("Trainingsziel",   "{{ athlete.trainingsziel }}"),
+        ("Wettkampfziel",   "{{ athlete.wettkampfziel }}"),
+        ("Umfang/Woche",    "{{ athlete.trainingsumfang_wo }}"),
+        ("Leistungsniveau", "{{ athlete.leistungsniveau }}"),
+    ],
+    right_title="Testprotokoll",
+    right_rows=[
+        ("Sportart",        "{{ testprotokoll.sportart_label }}"),
+        ("Datum",           "{{ testprotokoll.testdatum }}"),
+        ("Uhrzeit",         "{{ testprotokoll.uhrzeit }}"),
+        ("Ort",             "{{ testprotokoll.durchfuehrungsort }}"),
+        ("Testleiter",      "{{ testprotokoll.testleiter }}"),
+        ("Gerät",           "{{ testprotokoll.geraet }}"),
+        ("Anfangsbelastung","{{ testprotokoll.anfangsbelastung_display }}"),
+        ("Stufeninkrement", "{{ testprotokoll.stufeninkrement_display }}"),
+        ("Stufendauer",     "{{ testprotokoll.stufendauer_min }} min"),
+        ("Ausbelastung",    "{{ ausbelastung_de }}"),
+        ("{{ v_max_label }}", "{{ v_max_display }}"),
+    ],
+)
 
-doc.add_paragraph()
+# Round 2 P0-2: Rohdaten + Plot side-by-side keeps Page 2 within the 5-page
+# budget while still placing the diagram on Page 2 as Anna's spec requires
+# ("Seite 2 Daten + Rohdaten/Testprotokoll + Grafik").
+heading("Rohdaten der Teststufen & Diagramm", level=3, size_pt=11)
+side = doc.add_table(rows=1, cols=2)
+side.autofit = False
+left = side.cell(0, 0); left.width = Cm(13.0)
+right = side.cell(0, 1); right.width = Cm(13.5)
+_set_cell_no_borders(left); _set_cell_no_borders(right)
 
-heading("Testprotokoll", level=2)
-add_kv_table([
-    ("Sportart",        "{{ testprotokoll.sportart_label }}"),
-    ("Datum",           "{{ testprotokoll.testdatum }}"),
-    ("Uhrzeit",         "{{ testprotokoll.uhrzeit }}"),
-    ("Ort",             "{{ testprotokoll.durchfuehrungsort }}"),
-    ("Testleiter",      "{{ testprotokoll.testleiter }}"),
-    ("Gerät",           "{{ testprotokoll.geraet }}"),
-    ("Anfangsbelastung","{{ testprotokoll.anfangsbelastung_display }}"),
-    ("Stufeninkrement", "{{ testprotokoll.stufeninkrement_display }}"),
-    ("Stufendauer",     "{{ testprotokoll.stufendauer_min }} min"),
-    ("Besonderheiten",  "{{ testprotokoll.besonderheiten }}"),
-    ("Ausbelastung",    "{{ ausbelastung_de }}"),
-    ("{{ v_max_label }}", "{{ v_max_display }}"),
-    ("Nachbelastungslaktat 3 min", "{{ testprotokoll.nachbelastungslaktat_3min }}"),
-    ("Nachbelastungslaktat 5 min", "{{ testprotokoll.nachbelastungslaktat_5min }}"),
-])
+# Left cell: Rohdaten table.
+left_para = left.paragraphs[0]
+left_para.text = ""
+inner = left.add_table(rows=4, cols=5)
+inner.autofit = False
+header_widths = [1.6, 2.6, 3.0, 3.0, 2.0]
+for i, w in enumerate(header_widths):
+    for r in inner.rows:
+        r.cells[i].width = Cm(w)
+inner_headers = ["Stufe", "{{ x_axis_label }}", "HF (bpm)", "Laktat (mmol/l)", "RPE (0-10)"]
+for i, h in enumerate(inner_headers):
+    c = inner.cell(0, i)
+    c.text = ""
+    _set_cell_bg(c, "0B2545"); _set_cell_borders(c, "0B2545")
+    c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(h); run.font.bold = True; run.font.size = Pt(8.5); run.font.color.rgb = WHITE
+inner.cell(1, 0).text = ""
+inner.cell(1, 0).paragraphs[0].add_run("{%tr for s in steps_display %}")
+row_tpl = ["{{ s.stufe }}", "{{ s.intensitaet }}", "{{ s.herzfrequenz_bpm }}",
+           "{{ s.laktat_mmol }}", "{{ s.rpe }}"]
+for i, tpl in enumerate(row_tpl):
+    c = inner.cell(2, i)
+    c.text = ""
+    _set_cell_borders(c)
+    c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(tpl); run.font.size = Pt(8.5); run.font.color.rgb = TEXT
+inner.cell(3, 0).text = ""
+inner.cell(3, 0).paragraphs[0].add_run("{%tr endfor %}")
+# Remove the placeholder paragraph that python-docx leaves before the inner table.
+if left.paragraphs and not left.paragraphs[0].text:
+    pe = left.paragraphs[0]._element
+    pe.getparent().remove(pe)
 
-doc.add_paragraph()
-heading("Laktat- und Herzfrequenzverlauf", level=2)
-plot_p = doc.add_paragraph()
-plot_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-plot_p.add_run("{{ diagram }}")
+# Right cell: plot.
+right_para = right.paragraphs[0]
+right_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+right_para.text = ""
+right_para.add_run("{{ diagram }}")
 
 
-# ── PAGE 3: Schwellenschnittpunkte + Trainingsbereiche ──────────────────────
+# ── PAGE 3: Analyse (Pivot + Zonen) ─────────────────────────────────────────
 page_break()
-heading("Analyse der Leistungsdiagnostik", level=1)
+heading("Analyse der Leistungsdiagnostik", level=1, size_pt=14)
 
 heading("Schwellenschnittpunkte", level=2)
-add_table_with_loop(
-    headers=["Laktat (mmol/l)", "{{ x_axis_label }}", "Pace (min/km)", "Herzfrequenz (bpm)"],
-    row_template=[
-        "{{ r.laktat }}",
-        "{{ r.intensitaet }}",
-        "{{ r.pace_min_per_km }}",
-        "{{ r.herzfrequenz_bpm }}",
-    ],
-    loop_var="r",
-    items_var="intersections",
-    header_widths_cm=[4.5, 6.0, 5.5, 5.5],
-)
+# This paragraph is replaced after docxtpl render by a dynamically-built pivot
+# table. See _insert_intersection_pivot() in src/ld/report.py.
+marker_p = doc.add_paragraph("<<INTERSECTION_PIVOT>>")
+mr = marker_p.runs[0]; mr.font.color.rgb = TEXT; mr.font.size = Pt(9)
 
 doc.add_paragraph()
 heading("Trainingsbereiche", level=2)
+# Rows are colored per zone in the post-render pass (_color_zone_rows).
 add_table_with_loop(
-    headers=["Zone", "Ziel", "Bereich", "Pace (min/km)", "Herzfrequenz (bpm)", "RPE"],
+    headers=["Zone", "Ziel", "{{ x_axis_label }}", "Pace (min/km)", "Herzfrequenz (bpm)", "RPE (0-10)"],
     row_template=[
         "{{ z.name }}",
         "{{ z.ziel }}",
@@ -317,59 +415,54 @@ add_table_with_loop(
     ],
     loop_var="z",
     items_var="zones",
-    header_widths_cm=[1.8, 4.0, 4.5, 4.5, 4.5, 2.0],
+    header_widths_cm=[1.6, 4.5, 4.8, 4.5, 4.8, 2.3],
+    header_font_size=9.5,
+    body_font_size=9.5,
 )
 
 
-# ── PAGE 4: Interpretation ──────────────────────────────────────────────────
+# ── PAGE 4: Interpretation (4 Blöcke) ───────────────────────────────────────
 page_break()
-heading("Interpretation", level=1)
+heading("Interpretation", level=1, size_pt=14)
 
 heading("Zusammenfassung", level=2)
 body("{{ interp_zusammenfassung }}")
-doc.add_paragraph()
 
 heading("Schwellen & Zonen", level=2)
 body("{{ interp_schwellen }}")
-doc.add_paragraph()
 
-heading("Empfehlungen", level=2)
-body("{{ interp_empfehlungen }}")
+heading("Nächste 3-4 Wochen", level=2)
+body("{{ interp_coaching_ausblick }}")
+
+heading("Energie & Regeneration", level=2)
+body("{{ interp_ernaehrung }}")
 
 
-# ── PAGE 5: Trainerseite — INTERN ───────────────────────────────────────────
+# ── PAGE 5: Trainerseite intern (2×2 + Trainernotizen-Table) ────────────────
 page_break()
 intern_p = doc.add_paragraph()
 intern_run = intern_p.add_run("Trainerseite — Intern (nicht für Athlet:in)")
 intern_run.font.size = Pt(10); intern_run.font.italic = True; intern_run.font.color.rgb = ACCENT
-heading("Fachliche Notizen", level=1)
+heading("Fachliche Notizen", level=1, size_pt=14)
 
-heading("Pflichtprüfungen — Kontrolle der Testqualität", level=2)
-# `{%p ... %}` removes the host paragraph so if/else/endif don't leave blank
-# lines. The for-loop body stays on one paragraph (plain `{% %}`), so each
-# iteration's text concatenates within that paragraph.
-body("{%p if internal_failed_checks %}")
-body("Folgende Hinweise wurden vor der Interpretation festgestellt:")
-body("{% for p in internal_failed_checks %}⚠ {{ p.message_de }}\n{% endfor %}")
-body("{%p else %}")
-body("Alle Pflichtprüfungen: OK.")
-body("{%p endif %}")
-
-doc.add_paragraph()
-heading("Risikoanalyse", level=2)
-body("{{ interp_risiko if interp_risiko else 'Keine besonderen Risiken aus den Daten ableitbar — siehe Pflichtprüfungen.' }}")
-
-doc.add_paragraph()
-heading("Schwellenlogik", level=2)
-body(
-    "Die Zonengrenzen sind Orientierungspunkte. Z2-Obergrenze: v bei 2.0 mmol/l. "
-    "Z3-Obergrenze: v bei 3.0 mmol/l. Z4-Obergrenze: v bei 4.0 mmol/l. "
-    "Z5-Obergrenze: Maximalgeschwindigkeit (aliquot-korrigiert). "
-    "Z6 darüber. Diese Werte werden mit Kurvenform, HF-Verlauf und RPE-Muster "
-    "kombiniert (keine rein fixen mmol-Schwellen). Der/die Trainer:in bestätigt "
-    "oder passt die Vorschläge an.",
-    size_pt=9,
-)
+# 2x2 quadrants — bodies are plain template variables (conditional logic and
+# loops are pre-formatted in src/ld/report.py to avoid docxtpl paragraph quirks).
+add_2x2_grid([
+    ("Pflichtprüfungen", "{{ pflichtpruefungen_text }}"),
+    (
+        "Risikoanalyse",
+        "{{ interp_risiko if interp_risiko else 'Keine besonderen Risiken aus den Daten ableitbar. Siehe Pflichtprüfungen für Detailmuster.' }}",
+    ),
+    (
+        "Schwellenlogik",
+        "Zonengrenzen sind Orientierungspunkte. Z2-Ober: v bei 2.0 mmol/l. "
+        "Z3-Ober: v bei 3.0 mmol/l. Z4-Ober: v bei 4.0 mmol/l. "
+        "Z5-Ober: Maximalgeschwindigkeit (aliquot-korrigiert). Z6 darüber. "
+        "Diese Werte werden mit Kurvenform, HF-Verlauf und RPE-Muster kombiniert "
+        "(keine rein fixen mmol-Schwellen).",
+    ),
+    ("Testqualität", "{{ testqualitaet_text }}"),
+])
 
 doc.add_paragraph()
 heading("Trainernotizen", level=2)
@@ -379,47 +472,52 @@ add_kv_table([
     ("Stärken",               "{{ coaching.staerken }}"),
     ("Schwächen",             "{{ coaching.schwaechen }}"),
     ("Geplante Wettkämpfe",   "{{ coaching.geplante_wettkaempfe }}"),
-    ("Trainernotizen",        "{{ coaching.trainernotizen }}"),
-])
+    ("Notizen",               "{{ coaching.trainernotizen }}"),
+], font_size=9)
 
 
-# ── Footer (pages 2–5, suppressed on page 1) ─────────────────────────────────
+# ── Footer (pages 2-5, suppressed on page 1) ────────────────────────────────
 def _build_footer(section, *, primary_color: RGBColor = PRIMARY) -> None:
-    """3-column footer: contact left, page number center-right, mini-logo right.
-    Plus a thin top border for visual separation."""
+    """Footer mit durchgehender Trennlinie (oben am Footer-Bereich, nicht
+    pro Zelle — sonst sieht es segmentiert aus). Mittelgrau für ruhigen
+    Markenanker (Round 2 P1-2)."""
     footer = section.footer
     footer.is_linked_to_previous = False
-    # Clear default footer paragraph
     for p in list(footer.paragraphs):
         p._element.getparent().remove(p._element)
 
-    table = footer.add_table(rows=1, cols=3, width=Cm(26.0))
+    # Trennlinie als Border am ersten Paragraphen — durchgehende Linie über
+    # die volle Breite, weil ein Paragraph keine Cell-Grenzen hat.
+    rule_p = footer.add_paragraph()
+    pPr = rule_p._element.get_or_add_pPr()
+    pBdr = OxmlElement("w:pBdr")
+    top = OxmlElement("w:top")
+    top.set(qn("w:val"), "single")
+    top.set(qn("w:sz"), "4")
+    top.set(qn("w:space"), "1")
+    top.set(qn("w:color"), LINE)
+    pBdr.append(top)
+    pPr.append(pBdr)
+
+    table = footer.add_table(rows=1, cols=3, width=Cm(26.5))
     table.autofit = False
     cells = table.rows[0].cells
-    cells[0].width = Cm(13.0); cells[1].width = Cm(7.0); cells[2].width = Cm(6.0)
-
-    # Thin top border on each footer cell
+    cells[0].width = Cm(12.0); cells[1].width = Cm(8.0); cells[2].width = Cm(6.5)
     for c in cells:
-        tc_pr = c._tc.get_or_add_tcPr()
-        borders = OxmlElement("w:tcBorders")
-        top = OxmlElement("w:top")
-        top.set(qn("w:val"), "single"); top.set(qn("w:sz"), "4"); top.set(qn("w:color"), "D1D5DB")
-        borders.append(top)
-        tc_pr.append(borders)
+        _set_cell_no_borders(c)
 
-    # Left: contact
+    # Left: Kontakt.
     cl = cells[0].paragraphs[0]
     cl.alignment = WD_ALIGN_PARAGRAPH.LEFT
     run = cl.add_run(f"{CONTACT_EMAIL}  ·  {CONTACT_PHONE}")
-    run.font.size = Pt(8); run.font.color.rgb = TEXT
+    run.font.size = Pt(8); run.font.color.rgb = FOOTER_GREY
 
-    # Center: page number (via field code)
+    # Center: Seitenzahl.
     cm = cells[1].paragraphs[0]
     cm.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = cm.add_run("Seite ")
-    run.font.size = Pt(8); run.font.color.rgb = TEXT
+    run.font.size = Pt(8); run.font.color.rgb = FOOTER_GREY
 
-    # Field code: PAGE
     fld_char_begin = OxmlElement("w:fldChar")
     fld_char_begin.set(qn("w:fldCharType"), "begin")
     instr = OxmlElement("w:instrText")
@@ -427,10 +525,10 @@ def _build_footer(section, *, primary_color: RGBColor = PRIMARY) -> None:
     fld_char_end = OxmlElement("w:fldChar")
     fld_char_end.set(qn("w:fldCharType"), "end")
     page_run = cm.add_run()
-    page_run.font.size = Pt(8); page_run.font.color.rgb = TEXT
+    page_run.font.size = Pt(8); page_run.font.color.rgb = FOOTER_GREY
     page_run._r.append(fld_char_begin); page_run._r.append(instr); page_run._r.append(fld_char_end)
 
-    # Right: mini logo
+    # Right: Mini-Logo.
     cr = cells[2].paragraphs[0]
     cr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     if LOGO.exists():
@@ -438,11 +536,10 @@ def _build_footer(section, *, primary_color: RGBColor = PRIMARY) -> None:
 
 
 def _hide_first_page_footer(section) -> None:
-    """Make the first-page footer empty so the cover has no page number/contact."""
     fp = section.first_page_footer
     for p in list(fp.paragraphs):
         p._element.getparent().remove(p._element)
-    fp.add_paragraph()  # one empty paragraph to satisfy schema
+    fp.add_paragraph()
 
 
 _build_footer(section)

@@ -59,7 +59,7 @@ class TestStep:
     intensitaet: float
     herzfrequenz_bpm: int | None
     laktat_mmol: float | None
-    rpe: int | None            # 6-20 scale (default per template)
+    rpe: int | None            # 0-10 (Borg CR10) — Anna 2026-05-13 Round 2
 
 
 @dataclass(frozen=True)
