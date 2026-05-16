@@ -5,17 +5,46 @@ visuell geprüft. Jetzt bist du dran mit Feedback für Round 3.
 
 ---
 
-## 1. Update einspielen (einmalig, ca. 30 Sekunden)
+## 1. Update einspielen (ZIP-Workflow)
 
-Öffne ein Terminal und führe aus:
+Falls Codex noch läuft: vorher beenden (`Ctrl+C`).
+
+**Schritt 1a — Eingabe- und Ausgabe-Daten sichern**, damit nichts verloren geht:
+
+```
+mv ~/Desktop/leistungsdiagnostik/input ~/Desktop/ld_input_backup
+mv ~/Desktop/leistungsdiagnostik/output ~/Desktop/ld_output_backup
+```
+
+**Schritt 1b — Neue Version laden:**
+
+1. Gehe auf https://github.com/woerchri/leistungsdiagnostik
+2. Wechsle oben links den Branch auf **`main`** (falls nicht schon ausgewählt).
+3. Klicke auf den grünen **"Code"**-Button → **"Download ZIP"**.
+4. Entpacke die ZIP, sodass der Ordner heißt: `~/Desktop/leistungsdiagnostik`
+   (alten Ordner vorher in `~/Desktop/leistungsdiagnostik_alt` umbenennen
+   oder löschen).
+
+**Schritt 1c — Daten zurückspielen:**
+
+```
+mv ~/Desktop/ld_input_backup ~/Desktop/leistungsdiagnostik/input
+mv ~/Desktop/ld_output_backup ~/Desktop/leistungsdiagnostik/output
+```
+
+**Schritt 1d — Abhängigkeiten aktualisieren:**
 
 ```
 cd ~/Desktop/leistungsdiagnostik
-git pull
 uv sync
 ```
 
-Falls Codex noch läuft: vorher beenden (`Ctrl+C`).
+**Optional, aber empfohlen — LibreOffice installieren**, damit der 5-Seiten-
+Check beim Bauen automatisch geprüft wird:
+
+```
+brew install --cask libreoffice
+```
 
 ## 2. Bericht generieren
 
