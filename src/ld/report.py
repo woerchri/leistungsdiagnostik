@@ -51,6 +51,34 @@ def _x_axis_label(sport: str) -> str:
     return "Stufe"
 
 
+# Per-field char caps for Page-5 Trainernotizen-Tabelle. Anna 2026-05-17:
+# "Kürzen, sodass die Notizen auf einer Seite Platz haben". Truncation here
+# protects the hard 5-page cap without losing the diagnostic information —
+# the FULL data is still in the JSON for archive purposes.
+_COACHING_CHAR_CAPS: dict[str, int] = {
+    "verletzungen": 120,
+    "aktuelle_probleme": 120,
+    "staerken": 120,
+    "schwaechen": 120,
+    "geplante_wettkaempfe": 120,
+    "trainernotizen": 260,  # Free-text — slightly larger budget.
+}
+
+
+def _truncate(text: str | None, max_chars: int, *, field: str) -> str:
+    """Trim to `max_chars` minus the ellipsis. Prints a warning to stdout so
+    the operator notices that some text was suppressed for the page budget."""
+    if not text:
+        return "—"
+    if len(text) <= max_chars:
+        return text
+    print(
+        f"Hinweis: Trainernotiz-Feld '{field}' ({len(text)} Zeichen) wurde auf "
+        f"{max_chars} gekürzt — vollständiger Text bleibt in der JSON-Datei."
+    )
+    return text[: max_chars - 1].rstrip() + "…"
+
+
 def _format_pflichtpruefungen(result: AnalysisResult) -> str:
     failed = [p for p in result.pflichtpruefungen if not p.ok]
     total = len(result.pflichtpruefungen)
@@ -255,13 +283,13 @@ def render(
         # inside a single table cell without paragraph-boundary issues.
         "pflichtpruefungen_text": _format_pflichtpruefungen(result),
         "testqualitaet_text": _format_testqualitaet(result),
+        # Coaching fields are truncated to per-field char caps so the
+        # Page-5 Trainernotizen-Tabelle always fits in one page (Anna
+        # 2026-05-17 — "immer 5 Seiten, immer gleiche Struktur"). Full
+        # text remains in the JSON for archive.
         "coaching": {
-            "verletzungen": result.test_run.coaching.verletzungen or "—",
-            "aktuelle_probleme": result.test_run.coaching.aktuelle_probleme or "—",
-            "staerken": result.test_run.coaching.staerken or "—",
-            "schwaechen": result.test_run.coaching.schwaechen or "—",
-            "geplante_wettkaempfe": result.test_run.coaching.geplante_wettkaempfe or "—",
-            "trainernotizen": result.test_run.coaching.trainernotizen or "—",
+            name: _truncate(getattr(result.test_run.coaching, name), cap, field=name)
+            for name, cap in _COACHING_CHAR_CAPS.items()
         },
         # Page-4 interpretation blocks (Round 2 P1-5 — 4 sections).
         "interp_zusammenfassung": interp.get("zusammenfassung", "[Interpretation: ausstehend]"),

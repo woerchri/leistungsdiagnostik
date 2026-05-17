@@ -18,6 +18,7 @@ from ld import render_qa
 
 REPO = Path(__file__).parent.parent.parent
 FIXTURE = REPO / "tests" / "protocols" / "fixtures" / "lauf" / "rainier.xlsx"
+SARAH_FIXTURE = REPO / "tests" / "protocols" / "fixtures" / "lauf" / "sarah.xlsx"
 INTERP_SAMPLE = {
     "zusammenfassung": (
         "Rainier, dein Test zeigt eine saubere Laktatkurve mit klarer "
@@ -131,4 +132,21 @@ def test_draft_also_renders_to_five_pages(tmp_path):
     pages = render_qa.count_pages(pdf)
     assert pages == 5, (
         f"Draft darf nur 5 Seiten haben, gerendert wurden {pages}."
+    )
+
+
+@pytest.mark.skipif(not _has_soffice(),
+                    reason="LibreOffice nicht installiert")
+def test_sarah_reference_renders_to_five_pages(tmp_path):
+    """Second reference fixture (Sarah — complete last step, no aliquot vmax)
+    must also hit exactly 5 pages. Round 2.1 — Anna 2026-05-17 hard-5-cap."""
+    subprocess.run(
+        [sys.executable, "-m", "ld.run", str(SARAH_FIXTURE), "--output-dir", str(tmp_path)],
+        check=True, capture_output=True, text=True,
+    )
+    draft = next(tmp_path.glob("SS_LD_Lauf_*_draft_v*.docx"))
+    pdf = render_qa.render_to_pdf(draft, out_dir=tmp_path)
+    pages = render_qa.count_pages(pdf)
+    assert pages == 5, (
+        f"Sarah-Draft muss 5 Seiten haben, gerendert wurden {pages}."
     )

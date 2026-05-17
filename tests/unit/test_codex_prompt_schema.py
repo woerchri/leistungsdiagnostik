@@ -34,3 +34,22 @@ def test_prompt_warns_against_invented_weekplans():
     src = PROMPT.read_text().lower()
     # Match either the explicit warning or the equivalent rule.
     assert "wochenplan" in src or "trainingsplan" in src or "erfinden" in src or "erfundene" in src
+
+
+def test_prompt_requires_beispielwoche_in_coaching_ausblick():
+    """Anna 2026-05-17 Round 2.1 decision #4 — the 3-4-Wochen-Ausblick
+    must include a concrete Beispielwoche (Mo-So sample week)."""
+    src = PROMPT.read_text().lower()
+    assert "beispielwoche" in src, "Codex prompt must request a Beispielwoche"
+    # Sanity-check: the Mo-So week format should be hinted at.
+    assert "mo:" in src or "montag" in src or "mo-so" in src, \
+        "Prompt should show the Mo-So sample-week format"
+
+
+def test_prompt_allows_short_ernaehrung():
+    """Anna 2026-05-17 decision #5 — Ernährung may be short when there's
+    little to say (not a hard 120-word floor)."""
+    src = PROMPT.read_text().lower()
+    # Either the word cap was relaxed (1-100 phrasing) or the explicit
+    # 'kurz halten' allowance is present.
+    assert "1-100" in src or "kurz halten" in src or "ruhig kurz" in src
