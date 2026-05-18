@@ -1,17 +1,22 @@
 """Build templates/report.docx — 5-page A4 landscape Leistungsdiagnostik report.
 
-Round-3 layout (Anna 2026-05-17, supersedes Round 2):
+Round-4 layout (Anna 2026-05-18, supersedes Round 3):
   Page 1: Deckblatt — Logo, Titel, Name, Datum/Ort, kleine Kontaktzeile.
           KEIN "Erstellt von …".
   Page 2: Athletendaten + Testprotokoll (mit Ruhelaktat, Steigung, Dauer letzte
-          Stufe) + Rohdaten-Tabelle + Plot.
+          Stufe) + Rohdaten-Tabelle full-width + Plot full-width (groß, ~25 cm).
   Page 3: Schwellenschnittpunkte (Pivot, post-render, Word-Whitelist) +
-          Trainingsbereiche (zonenfarbig) + Trainingsformen-Mini-Tabelle.
+          Trainingsbereiche (zonenfarbig, mit Methoden-Spalte). Round 4: keine
+          separate Trainingsformen-Mini-Tabelle mehr — Methode ist Spalte.
   Page 4: Interpretation in 4 Blöcken — Zusammenfassung, Schwellen & Zonen,
-          Empfehlungen (umbenannt von "Nächste 3-4 Wochen", ohne Beispielwoche),
-          Energie & Regeneration.
+          Empfehlungen, Energie & Regeneration.
   Page 5: Trainerseite intern — 2×2-Kachelgrid (Pflichtprüfungen, Risiko,
           Schwellenlogik, Testqualität) + Trainernotizen-Tabelle.
+
+Round 4 deltas vs Round 3:
+  - Plot deutlich größer (25 cm full-width statt 13 cm side-by-side).
+  - Trainingsbereiche bekommt Methoden-Spalte; Mini-Tabelle entfällt.
+  - Z1==Z2-Zeile rendert leere Zellen (kein "—") für Intensität/Pace/HF.
 
 The pivot threshold table is built in `src/ld/report.py` after docxtpl renders,
 because its column count varies with the number of valid laktat targets.
@@ -221,7 +226,9 @@ def add_two_column_kv(left_rows: list[tuple[str, str]],
         run = cell.paragraphs[0].add_run(title)
         run.font.bold = True; run.font.size = Pt(12); run.font.color.rgb = PRIMARY
 
-    # Inner KV-tables in row 1, one per side.
+    # Inner KV-tables in row 1, one per side. Round 4 (Anna 2026-05-18): 8 pt
+    # statt 8.5 pt + tight spacing — Page 2 muss Daten-Block + Rohdaten +
+    # voller Plot tragen, jeder halbe Millimeter Zeilenhöhe zählt.
     for col, rows in enumerate((left_rows, right_rows)):
         host_cell = outer.cell(1, col)
         # Replace placeholder paragraph with a sub-table.
@@ -234,10 +241,21 @@ def add_two_column_kv(left_rows: list[tuple[str, str]],
             kc.width = Cm(4.2); vc.width = Cm(8.5)
             _set_cell_borders(kc); _set_cell_borders(vc)
             kc.text = ""; vc.text = ""
+            # Tight paragraph spacing — no space before/after — so 14 KV rows
+            # don't eat the height budget. python-docx default spacing is
+            # ~80 twips after each paragraph.
+            for cell in (kc, vc):
+                p_pPr = cell.paragraphs[0]._element.get_or_add_pPr()
+                p_spacing = OxmlElement("w:spacing")
+                p_spacing.set(qn("w:before"), "0")
+                p_spacing.set(qn("w:after"), "0")
+                p_spacing.set(qn("w:line"), "240")  # single line height
+                p_spacing.set(qn("w:lineRule"), "auto")
+                p_pPr.append(p_spacing)
             kr = kc.paragraphs[0].add_run(k)
-            kr.font.bold = True; kr.font.size = Pt(8.5); kr.font.color.rgb = PRIMARY
+            kr.font.bold = True; kr.font.size = Pt(8); kr.font.color.rgb = PRIMARY
             vr = vc.paragraphs[0].add_run(v)
-            vr.font.size = Pt(8.5); vr.font.color.rgb = TEXT
+            vr.font.size = Pt(8); vr.font.color.rgb = TEXT
         # Remove the empty placeholder paragraph python-docx added inside the host cell.
         if host_cell.paragraphs and not host_cell.paragraphs[0].text:
             p_elem = host_cell.paragraphs[0]._element
@@ -357,56 +375,51 @@ add_two_column_kv(
     ],
 )
 
-# Round 2 P0-2: Rohdaten + Plot side-by-side keeps Page 2 within the 5-page
-# budget while still placing the diagram on Page 2 as Anna's spec requires
-# ("Seite 2 Daten + Rohdaten/Testprotokoll + Grafik").
+# Round 4 (Anna 2026-05-18): Plot deutlich größer. Statt side-by-side mit der
+# Rohdaten-Tabelle steht die Tabelle jetzt full-width schmal über dem
+# full-width Plot. So bekommt der Plot ~25 cm Breite statt 13 cm und wirkt
+# als primäres visuelles Element der Seite — Anna explizit: "Grafikgröße
+# hat Vorrang vor der starren Annahme, dass die Grafik zwingend auf Seite 2
+# bleiben muss". Wenn das 5-Seiten-Budget bricht, ist der Fallback Variante 2
+# (Plot rückt auf Seite 3).
+# Eine kombinierte Überschrift statt zwei separaten — spart vertikale
+# Höhe, die wir für den größeren Plot brauchen. e2e-Test erwartet sowohl
+# "Rohdaten" als auch "Diagramm" als Anker auf Seite 2.
 heading("Rohdaten der Teststufen & Diagramm", level=3, size_pt=11)
-side = doc.add_table(rows=1, cols=2)
-side.autofit = False
-left = side.cell(0, 0); left.width = Cm(13.0)
-right = side.cell(0, 1); right.width = Cm(13.5)
-_set_cell_no_borders(left); _set_cell_no_borders(right)
-
-# Left cell: Rohdaten table.
-left_para = left.paragraphs[0]
-left_para.text = ""
-inner = left.add_table(rows=4, cols=5)
-inner.autofit = False
-header_widths = [1.6, 2.6, 3.0, 3.0, 2.0]
-for i, w in enumerate(header_widths):
-    for r in inner.rows:
+raw = doc.add_table(rows=4, cols=5)
+raw.autofit = False
+raw.alignment = WD_ALIGN_PARAGRAPH.CENTER
+raw_widths = [2.4, 5.3, 5.3, 6.3, 3.7]   # ~23 cm gesamt, kompakt
+for i, w in enumerate(raw_widths):
+    for r in raw.rows:
         r.cells[i].width = Cm(w)
-inner_headers = ["Stufe", "{{ x_axis_label }}", "HF (bpm)", "Laktat (mmol/l)", "RPE (0-10)"]
-for i, h in enumerate(inner_headers):
-    c = inner.cell(0, i)
+raw_headers = ["Stufe", "{{ x_axis_label }}", "HF (bpm)", "Laktat (mmol/l)", "RPE (0-10)"]
+for i, h in enumerate(raw_headers):
+    c = raw.cell(0, i)
     c.text = ""
     _set_cell_bg(c, "0B2545"); _set_cell_borders(c, "0B2545")
     c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run(h); run.font.bold = True; run.font.size = Pt(8.5); run.font.color.rgb = WHITE
-inner.cell(1, 0).text = ""
-inner.cell(1, 0).paragraphs[0].add_run("{%tr for s in steps_display %}")
+raw.cell(1, 0).text = ""
+raw.cell(1, 0).paragraphs[0].add_run("{%tr for s in steps_display %}")
 row_tpl = ["{{ s.stufe }}", "{{ s.intensitaet }}", "{{ s.herzfrequenz_bpm }}",
            "{{ s.laktat_mmol }}", "{{ s.rpe }}"]
 for i, tpl in enumerate(row_tpl):
-    c = inner.cell(2, i)
+    c = raw.cell(2, i)
     c.text = ""
     _set_cell_borders(c)
     c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run(tpl); run.font.size = Pt(8.5); run.font.color.rgb = TEXT
-inner.cell(3, 0).text = ""
-inner.cell(3, 0).paragraphs[0].add_run("{%tr endfor %}")
-# Remove the placeholder paragraph that python-docx leaves before the inner table.
-if left.paragraphs and not left.paragraphs[0].text:
-    pe = left.paragraphs[0]._element
-    pe.getparent().remove(pe)
+raw.cell(3, 0).text = ""
+raw.cell(3, 0).paragraphs[0].add_run("{%tr endfor %}")
 
-# Right cell: plot.
-right_para = right.paragraphs[0]
-right_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-right_para.text = ""
-right_para.add_run("{{ diagram }}")
+# Plot full-width, zentriert, direkt unter der kombinierten
+# Rohdaten/Diagramm-Überschrift.
+plot_p = doc.add_paragraph()
+plot_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+plot_p.add_run("{{ diagram }}")
 
 
 # ── PAGE 3: Analyse (Pivot + Zonen) ─────────────────────────────────────────
@@ -422,8 +435,12 @@ mr = marker_p.runs[0]; mr.font.color.rgb = TEXT; mr.font.size = Pt(9)
 doc.add_paragraph()
 heading("Trainingsbereiche", level=2)
 # Rows are colored per zone in the post-render pass (_color_zone_rows).
+# Round 4 (Anna 2026-05-18): Methoden-Spalte ist Teil der Tabelle (Variante A
+# aus Round 3, früher verworfen). Separate Mini-Tabelle entfällt.
+# 7 Spalten — Methode bekommt großzügigste Breite weil längster Text.
 add_table_with_loop(
-    headers=["Zone", "Ziel", "{{ x_axis_label }}", "Pace (min/km)", "Herzfrequenz (bpm)", "RPE (0-10)"],
+    headers=["Zone", "Ziel", "{{ x_axis_label }}", "Pace (min/km)",
+             "Herzfrequenz (bpm)", "RPE (0-10)", "Methode / Trainingsform"],
     row_template=[
         "{{ z.name }}",
         "{{ z.ziel }}",
@@ -431,29 +448,13 @@ add_table_with_loop(
         "{{ z.pace_range }}",
         "{{ z.herzfrequenz_range }}",
         "{{ z.rpe }}",
+        "{{ z.methode }}",
     ],
     loop_var="z",
     items_var="zones",
-    header_widths_cm=[1.6, 4.5, 4.8, 4.5, 4.8, 2.3],
-    header_font_size=9.5,
-    body_font_size=9.5,
-)
-
-# Round 3 P1-1 (Anna 2026-05-17): Trainingsformen-Tabelle direkt unter
-# Trainingsbereiche — Variante B (2-spaltige Mini-Tabelle, kleine Schrift).
-# Variante A (Spalte in Trainingsbereiche) wurde verworfen, weil Seite 3 zu
-# breit würde. Inhalt ist statisch je Zone — kein Loop nötig, ein Render mit
-# Jinja-Variablen reicht.
-doc.add_paragraph()
-heading("Beschreibung / Methode Trainingsformen", level=3, size_pt=10)
-add_table_with_loop(
-    headers=["Zone", "Methode / Trainingsform"],
-    row_template=["{{ tf.name }}", "{{ tf.methode }}"],
-    loop_var="tf",
-    items_var="trainingsformen",
-    header_widths_cm=[2.0, 24.5],
-    header_font_size=8.5,
-    body_font_size=8.5,
+    header_widths_cm=[1.3, 3.4, 3.4, 3.4, 3.6, 1.8, 5.8],
+    header_font_size=9,
+    body_font_size=9,
 )
 
 

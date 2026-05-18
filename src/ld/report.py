@@ -25,9 +25,13 @@ _TEMPLATE_PATH = Path(__file__).parent.parent.parent / "templates" / "report.doc
 # gefiltert (Wert nur, wenn er innerhalb des gemessenen Bereichs liegt).
 _WORD_REPORT_LAKTAT_WHITELIST: tuple[float, ...] = (1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0)
 _WORD_REPORT_LAKTAT_REACHED_ONLY: tuple[float, ...] = (8.0,)
-# A4 landscape gives ~25 cm usable width. Anna 2026-05-13 Round 2 P0-2:
-# reduce plot width so Page 2 fits athlete + protocol + raw-data table + plot.
-_PLOT_WIDTH_CM = 13.0  # Fits in right-side cell of the Page-2 Rohdaten+Plot row.
+# Round 4 (Anna 2026-05-18) — Grafik MUSS deutlich größer sein, "Restplatz
+# maximal ausnützen". Plot ist jetzt full-width unter den Tabellen statt
+# side-by-side. A4 quer mit 1.6 cm Seitenrändern → 26.5 cm Nutzbreite.
+# Plot-Aspect ist 14:3.5 (4:1) — bei 25 cm Breite ergibt das ~6.25 cm Höhe,
+# was zusammen mit KV-Block (~6 cm) + Rohdaten-Tabelle (~3.5 cm) das
+# 5-Seiten-Budget hält.
+_PLOT_WIDTH_CM = 25.0
 
 # Brand tokens — mirrored from build_report_template.py.
 _PRIMARY = RGBColor(0x0B, 0x25, 0x45)
@@ -178,9 +182,12 @@ def render(
                 v_range = pace_range = "MAX"
                 hf_range = "—"
             elif z.is_collapsed_with_z2:
-                # Round 3 (Anna 2026-05-17): Z1 == Z2 → Intensität, Pace, HF
-                # leer lassen; nur RPE und Ziel bleiben aussagekräftig.
-                v_range = hf_range = pace_range = "—"
+                # Round 4 (Anna 2026-05-18): Z1 == Z2 → Intensität, Pace, HF
+                # WIRKLICH leer rendern (nicht "—"). Der Platzhalter "—" wirkt
+                # auf Athlet:innen wie "Wert fehlt", obwohl er hier "kein
+                # eigener Bereich, siehe Z2" bedeutet. Methode/Ziel/RPE
+                # bleiben sichtbar.
+                v_range = hf_range = pace_range = ""
             elif z.is_open_lower or (z.intensitaet_min is None and z.intensitaet_max is not None):
                 hi = _round_intensity(z.intensitaet_max)
                 v_range = f"≤ {hi} {intensity_unit}" if hi is not None else "—"
@@ -209,6 +216,9 @@ def render(
                 "herzfrequenz_range": hf_range,
                 "pace_range": pace_range,
                 "rpe": rpe,
+                # Round 4 (Anna 2026-05-18): Methoden direkt in Trainingsbereiche,
+                # nicht mehr als separate Mini-Tabelle. Inhalt statisch aus ZONE_METHODE.
+                "methode": ZONE_METHODE.get(z.name, ""),
             })
         return tuple(out)
 
@@ -323,14 +333,9 @@ def render(
         "ausbelastung_de": "ja" if proto.ausbelastung else "nein",
         "steps_display": _render_steps(),
         "zones": _render_zones(),
-        # Round 3 P1-1 (Anna 2026-05-17): statische Trainingsformen-Mini-Tabelle
-        # auf Seite 3 unter Trainingsbereiche. Ein Eintrag je Zone, dieselbe
-        # Reihenfolge wie zones (Z1..Z6). Inhalt ist statisch, kommt aus
-        # ZONE_METHODE in zones.py.
-        "trainingsformen": tuple(
-            {"name": z_name, "methode": ZONE_METHODE[z_name]}
-            for z_name in ("Z1", "Z2", "Z3", "Z4", "Z5", "Z6")
-        ),
+        # Round 4 (Anna 2026-05-18): Trainingsformen sind jetzt eine Spalte
+        # innerhalb von Trainingsbereiche — keine separate Tabelle mehr.
+        # `methode` ist Teil jedes Zone-Eintrags in _render_zones().
         "diagram": InlineImage(doc, str(plot_path), width=Cm(_PLOT_WIDTH_CM)),
         "x_axis_label": x_axis_label,
         "internal_failed_checks": [p for p in result.pflichtpruefungen if not p.ok],

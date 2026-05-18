@@ -79,7 +79,10 @@ proto_rows = [
     ("Stufeninkrement",                    1.0,                           "km/h | W | Stufen"),
     ("Stufendauer (min)",                  4.0,                           "Minuten"),
     ("Stufenlänge (m)",                    None,                          "Optional, nur Lauf (z.B. 1600)"),
-    ("Besonderheiten",                     "1% Steigung",                 "Freitext"),
+    # Round 4 (Anna 2026-05-18): Steigung hat ein eigenes Feld unten —
+    # daher hier keinen "1% Steigung"-Beispieltext mehr (vermeidet doppelte
+    # Eingabe und macht klar, dass Steigung strukturiert erfasst wird).
+    ("Besonderheiten",                     "",                            "Freitext (z.B. Witterung, Anreise)"),
     ("Letzte Stufe vollständig absolviert","Nein",                        "JA oder NEIN"),
     ("Dauer letzte Stufe (min)",           1.75,                          "Nur ausfüllen wenn NEIN oben"),
     ("Ausbelastung",                       "Ja",                          "JA oder NEIN"),

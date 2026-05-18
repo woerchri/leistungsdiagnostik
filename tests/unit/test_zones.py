@@ -140,7 +140,9 @@ def test_z1_collapsed_when_v_lk2_equals_v_lk3():
     z1 = by_name["Z1"]
     assert z1.is_collapsed_with_z2 is True
     assert z1.is_open_lower is False
-    # Empty fields → renderer shows "—" instead of duplicating Z2 anchor.
+    # Empty fields → renderer outputs the cell empty (Round 4 changed from
+    # "—" to truly empty); see tests/unit/test_round4_report_deltas.py for
+    # the rendered-cell assertion.
     assert z1.intensitaet_max is None
     assert z1.pace_min_min_per_km is None
     assert z1.herzfrequenz_max is None

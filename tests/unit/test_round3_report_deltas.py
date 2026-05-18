@@ -74,24 +74,12 @@ def test_testprotokoll_shows_new_round3_fields(tmp_path):
     assert "1.75 min" in text
 
 
-def test_trainingsformen_mini_table_present(tmp_path):
-    """Round 3 P1-1: separate Mini-Tabelle 'Beschreibung / Methode Trainingsformen'
-    direkt unter Trainingsbereiche."""
-    _, docx_path = _render(tmp_path)
-    text = docx2txt.process(str(docx_path))
-
-    # Heading must be present.
-    assert "Beschreibung / Methode Trainingsformen" in text
-    # All six zone methodology snippets must appear.
-    expected_snippets = (
-        "Dauermethode bis 30",                  # Z1
-        "Dauermethode bis mehrere Stunden",     # Z2
-        "Extensive Intervalle",                 # Z3 + Z4 (both phrasings)
-        "Intensive Intervalle",                 # Z5
-        "Intensive, maximale Intervalle",       # Z6
-    )
-    for snippet in expected_snippets:
-        assert snippet in text, f"Trainingsformen-Tabelle fehlt: {snippet!r}"
+# Round 4 (Anna 2026-05-18): die separate Mini-Tabelle "Beschreibung / Methode
+# Trainingsformen" wurde entfernt — Methode ist jetzt eine Spalte innerhalb
+# der Trainingsbereiche-Tabelle (Variante A aus Round 3). Die entsprechenden
+# Asserts wandern nach tests/unit/test_round4_report_deltas.py — dort wird
+# geprüft (a) die Spalte existiert in Trainingsbereiche und (b) die alte
+# Mini-Tabellen-Überschrift ist verschwunden.
 
 
 def test_page4_heading_renamed_to_empfehlungen(tmp_path):

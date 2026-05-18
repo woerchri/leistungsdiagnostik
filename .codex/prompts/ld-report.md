@@ -60,6 +60,16 @@ ausschließlich aus `uv run python -m ld.run`.
 
    - **Sprache:** Deutsch, direkt mit Vorname ansprechen ("Rainier, deine
      Schwelle liegt bei…"). NIE "Athlet:in" oder "Teilnehmer:in" sagen.
+   - **Echte Umlaute, niemals ASCII-Ersatz (Anna 2026-05-18 Round 4 P0-6):**
+     Verwende IMMER `ä`, `ö`, `ü`, `ß`. NIEMALS `ae`, `oe`, `ue`, `ss` als
+     Ersatz. Beispiele: `für` (nicht `fuer`), `können` (nicht `koennen`),
+     `nächste` (nicht `naechste`), `Ernährung` (nicht `Ernaehrung`),
+     `Läufer:innen` (nicht `Laeufer:innen`), `größere` (nicht `groessere`),
+     `Ausdauer` ist sowieso schon korrekt, aber `müssen`, `dürfen`, `häufig`,
+     `Übergänge`, `höhere` alle mit echten Umlauten. Gilt für ALLE Output-
+     Felder (zusammenfassung, schwellen, coaching_ausblick_3_4_wochen,
+     ernaehrung, risiko). Der JSON-Key `ernaehrung` bleibt aus
+     Kompatibilitätsgründen ASCII — der INHALT verwendet echte Umlaute.
    - **Maximalgeschwindigkeit** statt "v_max" oder "maximale Geschwindigkeit".
    - **RPE auf 0-10 (Borg CR10)** — wenn du subjektive Belastung erwähnst,
      auf dieser Skala formulieren.

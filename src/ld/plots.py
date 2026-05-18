@@ -11,7 +11,10 @@ import numpy as np
 from ld.types import AnalysisResult
 
 
-_FIGSIZE = (14.0, 3.5)  # Wide+short — Page 2 must hold Daten + Rohdaten + Plot.
+_FIGSIZE = (16.0, 2.6)  # Round 4 (Anna 2026-05-18): wider+shorter so the
+                        # full-width Page-2 plot (~25 cm wide) keeps its
+                        # height ~4.1 cm and the data block + Rohdaten table
+                        # still fit on Page 2 inside the 5-page budget.
 _DPI = 150
 _COLOR_LAKTAT = "#E63946"   # Rot — Laktatkurve
 _COLOR_HF = "#1F77B4"        # Blau — HF-Linie
