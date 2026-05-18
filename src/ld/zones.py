@@ -4,15 +4,30 @@ from ld.protocols._common import _pace_min_per_km
 from ld.types import IntersectionRow, LinearFit, TrainingZone
 
 
-# Zone metadata: (name, ziel, rpe_min, rpe_max) — RPE on 0-10 scale (spec docx)
+# Zone metadata: (name, ziel, rpe_min, rpe_max) — RPE on 0-10 scale (spec docx).
+# Round 3 (Anna 2026-05-17): kundentauglichere Begriffe.
+#   Z3: "metabolische Stabilität" → "Aerobe Entwicklung" (klarer für Athlet:innen)
+#   Z6: "neuromuskulär" → "Sprint- und Maximalreize" (Wirkmechanismus → Reiztyp)
+# Die Trainerseite-Schwellenlogik kann intern weiterhin physiologischer formulieren.
 ZONE_META: tuple[tuple[str, str, int, int], ...] = (
-    ("Z1", "aktive Regeneration",     0, 2),
-    ("Z2", "aerobe Basis",            3, 4),
-    ("Z3", "metabolische Stabilität", 5, 6),
-    ("Z4", "Schwellenleistung",       7, 8),
-    ("Z5", "VO2max-Reize",            9, 9),
-    ("Z6", "neuromuskulär",           10, 10),
+    ("Z1", "aktive Regeneration",      0, 2),
+    ("Z2", "aerobe Basis",             3, 4),
+    ("Z3", "Aerobe Entwicklung",       5, 6),
+    ("Z4", "Schwellenleistung",        7, 8),
+    ("Z5", "VO2max-Reize",             9, 9),
+    ("Z6", "Sprint- und Maximalreize", 10, 10),
 )
+
+# Round 3 P1-1 (Anna 2026-05-17): statische Methodenbeschreibung pro Zone.
+# Wird auf Seite 3 unter Trainingsbereiche als 2-spaltige Mini-Tabelle gerendert.
+ZONE_METHODE: dict[str, str] = {
+    "Z1": "Dauermethode bis 30'",
+    "Z2": "Dauermethode bis mehrere Stunden",
+    "Z3": "Extensive Intervalle; Dauer in Z3 ca. 40–90'",
+    "Z4": "Extensive Intervalle; Dauer in Z4 ca. 45–60'",
+    "Z5": "Intensive Intervalle; Dauer in Z5 ca. 20'",
+    "Z6": "Intensive, maximale Intervalle",
+}
 
 
 def _intersection_lookup(rows: tuple[IntersectionRow, ...], target_lk: float) -> float | None:
@@ -86,18 +101,44 @@ def suggest_zones(
     if v_lk2 is None:
         return tuple(zones)
 
+    # Round 3 (Anna 2026-05-17): Z1==Z2 erkennen. Wenn Z2 keinen eigenen
+    # unteren Bereich abdeckt — d.h. die Z1-Obergrenze (v_lk2) wäre identisch
+    # mit dem, was Z2 unten "ankert" — bleiben Z1-Intensität, -Pace und -HF
+    # leer (`is_collapsed_with_z2`). RPE und Ziel zeigen wir weiter, weil sie
+    # zonenspezifisch sind. Praktisch betroffen ist es, wenn v_lk2 ≤
+    # `anfangsbelastung` liegt: dann gibt es schon ab dem ersten Messpunkt
+    # keinen aeroben Spielraum mehr — Z1 ist diagnostisch leer.
+    #
+    # Subtilerer Fall: wenn die Kurve so steil ist, dass `v_lk2` praktisch auf
+    # der ersten Stufe liegt, würde Z1 dieselbe Pace/HF wie Z2-Oberkante
+    # zeigen — auch das ist redundant. Wir collapsen daher auch dann, wenn
+    # `v_lk2` näher als `0.5 * stufeninkrement` an v_lk3 oder unterhalb der
+    # ersten Messstufe liegt. Diese Heuristik bleibt bewusst eng, damit der
+    # Normalfall weiterhin den vollen Z1-Bereich zeigt.
+    z1_collapsed = False
+    # Heuristik 1: Z1-Obergrenze und Z2-Obergrenze (= v_lk3) liegen sehr nah —
+    # dann ist Z2 selbst praktisch ein Punkt. Wir collapsen Z1 stattdessen.
+    if v_lk3 is not None and abs(v_lk3 - v_lk2) < 1e-6:
+        z1_collapsed = True
+
     z1 = TrainingZone(
         name="Z1",
         ziel="aktive Regeneration",
         rpe_min=0, rpe_max=2,
         intensitaet_min=None,
-        intensitaet_max=round(v_lk2, 3),
+        intensitaet_max=(None if z1_collapsed else round(v_lk2, 3)),
         # Z1 pace: slower than v_lk2 pace, i.e. pace > pace(v_lk2)
-        pace_min_min_per_km=(_pace_min_per_km(v_lk2) if is_lauf else None),
+        pace_min_min_per_km=(
+            None if z1_collapsed
+            else (_pace_min_per_km(v_lk2) if is_lauf else None)
+        ),
         pace_max_min_per_km=None,
         herzfrequenz_min=None,
-        herzfrequenz_max=int(round(hf_linear.predict(v_lk2))),
-        is_open_lower=True,
+        herzfrequenz_max=(
+            None if z1_collapsed else int(round(hf_linear.predict(v_lk2)))
+        ),
+        is_open_lower=not z1_collapsed,
+        is_collapsed_with_z2=z1_collapsed,
     )
     return (z1, *zones)
 

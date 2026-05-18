@@ -75,15 +75,16 @@ def test_phase45_template_structure(tmp_path):
     intersection_section = text[
         text.find("Schwellenschnittpunkte"):text.find("Trainingsbereiche")
     ]
-    # 2.0/4.0/8.0 present
-    for lk in ["2.0", "4.0", "8.0"]:
-        assert lk in intersection_section
-    # 1.0/1.5 should not appear in the table column-1 (laktat) — check by
-    # asserting the row count by counting "mmol/l" appearances + lk values.
-    # Simpler: just check that the laktat column has 6 distinct entries (2.0..8.0).
-    laktat_targets_in_section = sum(1 for lk in ["2.0", "2.5", "3.0", "4.0", "6.0", "8.0"]
-                                     if lk in intersection_section)
-    assert laktat_targets_in_section == 6
+    # Round 3 (Anna 2026-05-17) — Word-Whitelist: 2.0, 3.0, 4.0, 6.0 present;
+    # 2.5 always dropped; 8.0 only when reached (Rainier intersection at 12.024
+    # lies past x_data_max=12.0 → dropped). 1.0/1.5 already dropped because
+    # the cubic has no in-range root.
+    for lk in ["2.0", "3.0", "4.0", "6.0"]:
+        assert lk in intersection_section, f"Expected lk={lk} in Word report"
+    for lk in ["1.0", "1.5", "2.5", "8.0"]:
+        assert lk not in intersection_section, (
+            f"lk={lk} must NOT appear in Word report (Round 3 whitelist + reached-only)"
+        )
     # Footer contact present at least once (in body / footer XML)
     assert "anna-maria@woerndle.at" in text
     assert "+43 677 62150496" in text

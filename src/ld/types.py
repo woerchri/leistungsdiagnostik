@@ -50,6 +50,13 @@ class Testprotokoll:
     # Post-exertion lactate (optional) — Anna 2026-05-13 added these to track recovery.
     nachbelastungslaktat_3min_mmol: float | None = None
     nachbelastungslaktat_5min_mmol: float | None = None
+    # Round 3 (Anna 2026-05-17): zusätzliche Testprotokoll-Felder im Report sichtbar machen.
+    # Ruhelaktat ist optional und beschreibt das Laktat vor Testbeginn.
+    # Steigung beschreibt die Laufband-Steigung in Prozent (steht heute meist
+    # als Freitext in `besonderheiten` — eigenes Feld macht es konsistent
+    # zwischen Input und Report).
+    ruhelaktat_mmol: float | None = None
+    steigung_prozent: float | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +134,11 @@ class TrainingZone:
     # Render hints (set by zones.suggest_zones, consumed by report.py):
     is_max_zone: bool = False     # Z6: render Intensität/HF/Pace as "MAX"
     is_open_lower: bool = False   # Z1: render Intensität/HF as "< x", Pace as "> p"
+    # Round 3 (Anna 2026-05-17): wenn Z1-Obergrenze == Z2-Obergrenze (z.B. weil
+    # die individuelle Schwelle 2 sehr niedrig liegt und Z2 keinen eigenen
+    # Bereich abdeckt), sollen Z1-Intensität/Pace/HF leer bleiben (`—`). Die
+    # Zeile bleibt für RPE und Ziel erhalten.
+    is_collapsed_with_z2: bool = False
 
 
 @dataclass(frozen=True)

@@ -1,9 +1,10 @@
-"""Interpretation field plumbing — Anna 2026-05-13 Round 2 P1-4 + P1-5.
+"""Interpretation field plumbing — Round 3 (Anna 2026-05-17).
 
-Page 4 has 4 sections: Zusammenfassung, Schwellen & Zonen, Nächste 3-4 Wochen,
-Energie & Regeneration. The Codex JSON keys are zusammenfassung, schwellen,
-coaching_ausblick_3_4_wochen, ernaehrung — with `empfehlungen` accepted as a
-legacy fallback for `coaching_ausblick_3_4_wochen`.
+Page 4 has 4 sections: Zusammenfassung, Schwellen & Zonen, Empfehlungen
+(renamed from "Nächste 3-4 Wochen" in Round 3), Energie & Regeneration. The
+Codex JSON keys are zusammenfassung, schwellen, coaching_ausblick_3_4_wochen,
+ernaehrung — with `empfehlungen` accepted as a legacy fallback for
+`coaching_ausblick_3_4_wochen`.
 """
 from __future__ import annotations
 
@@ -31,7 +32,9 @@ def test_all_four_section_headers_present(tmp_path):
     text = docx2txt.process(str(out))
     assert "Zusammenfassung" in text
     assert "Schwellen & Zonen" in text
-    assert "Nächste 3-4 Wochen" in text
+    # Round 3 (Anna 2026-05-17): renamed from "Nächste 3-4 Wochen" to "Empfehlungen".
+    assert "Empfehlungen" in text
+    assert "Nächste 3-4 Wochen" not in text
     assert "Energie & Regeneration" in text
 
 
@@ -50,7 +53,7 @@ def test_new_interp_keys_are_used(tmp_path):
 
 def test_legacy_empfehlungen_key_falls_back_to_coaching_ausblick(tmp_path):
     """During migration, Codex may still emit the old `empfehlungen` key. It
-    must surface in the new 'Nächste 3-4 Wochen' block."""
+    must surface in the renamed 'Empfehlungen' block (Round 3)."""
     interp = {
         "zusammenfassung": "z",
         "schwellen": "s",

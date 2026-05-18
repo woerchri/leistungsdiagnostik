@@ -13,9 +13,18 @@ from docx.shared import Cm, Pt, RGBColor
 from docxtpl import DocxTemplate, InlineImage
 
 from ld.types import AnalysisResult
+from ld.zones import ZONE_METHODE
 
 
 _TEMPLATE_PATH = Path(__file__).parent.parent.parent / "templates" / "report.docx"
+
+# Round 3 P0-5 (Anna 2026-05-17): kuratierte Whitelist für den Wordbericht.
+# Die Pipeline berechnet weiterhin alle Targets (1.0..8.0) in JSON/Codex —
+# der Wordbericht zeigt aber NUR diese Werte. 2.5 wird komplett weggelassen
+# (laut Anna immer); 8.0 wird zusätzlich noch durch eine "reached"-Prüfung
+# gefiltert (Wert nur, wenn er innerhalb des gemessenen Bereichs liegt).
+_WORD_REPORT_LAKTAT_WHITELIST: tuple[float, ...] = (1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0)
+_WORD_REPORT_LAKTAT_REACHED_ONLY: tuple[float, ...] = (8.0,)
 # A4 landscape gives ~25 cm usable width. Anna 2026-05-13 Round 2 P0-2:
 # reduce plot width so Page 2 fits athlete + protocol + raw-data table + plot.
 _PLOT_WIDTH_CM = 13.0  # Fits in right-side cell of the Page-2 Rohdaten+Plot row.
@@ -162,7 +171,16 @@ def render(
         out = []
         for z in result.zones_final:
             if z.is_max_zone:
-                v_range = hf_range = pace_range = "MAX"
+                # Round 3 (Anna 2026-05-17): Z6 → Intensität + Pace = "MAX",
+                # HF-Feld leer. Frühere Variante zeigte "MAX" in allen drei
+                # Feldern, das suggerierte aber eine bestimmbare Max-HF, die
+                # in einem submaximalen Stufentest nicht vorliegt.
+                v_range = pace_range = "MAX"
+                hf_range = "—"
+            elif z.is_collapsed_with_z2:
+                # Round 3 (Anna 2026-05-17): Z1 == Z2 → Intensität, Pace, HF
+                # leer lassen; nur RPE und Ziel bleiben aussagekräftig.
+                v_range = hf_range = pace_range = "—"
             elif z.is_open_lower or (z.intensitaet_min is None and z.intensitaet_max is not None):
                 hi = _round_intensity(z.intensitaet_max)
                 v_range = f"≤ {hi} {intensity_unit}" if hi is not None else "—"
@@ -211,9 +229,26 @@ def render(
     proto = result.test_run.testprotokoll
     athlete = result.test_run.athlete
 
-    # Build the pivot data for the post-render step. Only columns with a valid
-    # in-range root are emitted (Round 2 — ungültige Laktatwerte komplett weglassen).
-    valid_rows = [r for r in result.intersections if r.intensitaet is not None]
+    # Build the pivot data for the post-render step. Round 2 dropped rows with
+    # no valid in-range root entirely. Round 3 (Anna 2026-05-17) adds a Word-
+    # specific whitelist on top: 2.5 is hidden in the Word report (always),
+    # 8.0 only appears when the cubic intersection lies inside the measured
+    # range — i.e. the athlete actually reached that lactate level. JSON/Codex
+    # keep ALL targets so trainers can still see + correct them.
+    steps = result.test_run.steps
+    measured_xs = [s.intensitaet for s in steps if s.laktat_mmol is not None]
+    x_data_max = max(measured_xs) if measured_xs else float("inf")
+
+    def _word_visible(row) -> bool:
+        if row.intensitaet is None:
+            return False
+        if row.laktat not in _WORD_REPORT_LAKTAT_WHITELIST:
+            return False
+        if row.laktat in _WORD_REPORT_LAKTAT_REACHED_ONLY and row.intensitaet > x_data_max:
+            return False
+        return True
+
+    valid_rows = [r for r in result.intersections if _word_visible(r)]
     intersection_pivot: dict[str, Any] = {
         "columns": [r.laktat for r in valid_rows],
         "rows": [
@@ -267,12 +302,35 @@ def render(
                 f"{proto.nachbelastungslaktat_5min_mmol} mmol/l"
                 if proto.nachbelastungslaktat_5min_mmol is not None else "—"
             ),
+            # Round 3 (Anna 2026-05-17): Ruhelaktat, Steigung, Dauer letzte
+            # Stufe als sichtbare Felder im Testprotokoll-KV. Leere Werte → `—`.
+            "ruhelaktat_display": (
+                f"{proto.ruhelaktat_mmol} mmol/l"
+                if proto.ruhelaktat_mmol is not None else "—"
+            ),
+            "steigung_display": (
+                f"{proto.steigung_prozent} %"
+                if proto.steigung_prozent is not None else "—"
+            ),
+            "dauer_letzte_stufe_display": (
+                f"{proto.dauer_letzte_stufe_min} min"
+                if proto.dauer_letzte_stufe_min is not None
+                else ("voll" if proto.letzte_stufe_vollstaendig else "—")
+            ),
         },
         "v_max_label": v_max_label,
         "v_max_display": f"{_round_intensity(result.v_max)} {intensity_unit}",
         "ausbelastung_de": "ja" if proto.ausbelastung else "nein",
         "steps_display": _render_steps(),
         "zones": _render_zones(),
+        # Round 3 P1-1 (Anna 2026-05-17): statische Trainingsformen-Mini-Tabelle
+        # auf Seite 3 unter Trainingsbereiche. Ein Eintrag je Zone, dieselbe
+        # Reihenfolge wie zones (Z1..Z6). Inhalt ist statisch, kommt aus
+        # ZONE_METHODE in zones.py.
+        "trainingsformen": tuple(
+            {"name": z_name, "methode": ZONE_METHODE[z_name]}
+            for z_name in ("Z1", "Z2", "Z3", "Z4", "Z5", "Z6")
+        ),
         "diagram": InlineImage(doc, str(plot_path), width=Cm(_PLOT_WIDTH_CM)),
         "x_axis_label": x_axis_label,
         "internal_failed_checks": [p for p in result.pflichtpruefungen if not p.ok],

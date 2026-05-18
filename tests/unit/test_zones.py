@@ -103,3 +103,53 @@ def test_z2_bounds_anchored_to_lk2_and_lk3():
     assert by_name["Z4"].intensitaet_max == 11.0
     assert by_name["Z5"].intensitaet_min == 11.0
     assert by_name["Z5"].intensitaet_max == 13.5  # v_max
+
+
+def test_round3_customer_friendly_zone_labels():
+    """Round 3 (Anna 2026-05-17): Z3 and Z6 ziel-Labels updated for clarity.
+    Z3 was 'metabolische Stabilität', Z6 was 'neuromuskulär' — both replaced."""
+    zones = suggest_zones(_full_rows(), _HF_LINEAR, v_max=13.5, is_lauf=True)
+    by_name = {z.name: z for z in zones}
+    assert by_name["Z3"].ziel == "Aerobe Entwicklung"
+    assert by_name["Z6"].ziel == "Sprint- und Maximalreize"
+    # No regression on the still-valid old labels:
+    assert by_name["Z2"].ziel == "aerobe Basis"
+    assert by_name["Z4"].ziel == "Schwellenleistung"
+    assert by_name["Z5"].ziel == "VO2max-Reize"
+
+
+def test_z1_collapsed_when_v_lk2_equals_v_lk3():
+    """Round 3 (Anna 2026-05-17): when Z2 has no diagnostic range (v_lk2
+    equals v_lk3), Z1 should render with empty Intensität/Pace/HF — i.e.
+    `is_collapsed_with_z2=True` — instead of repeating Z2's bounds."""
+    # Force lk=2.0 and lk=3.0 to the same x-value: Z2 collapses to a point,
+    # which means Z1 has no diagnostic content distinct from Z2.
+    rows = (
+        _row(1.0, None),
+        _row(1.5, None),
+        _row(2.0, 9.0),
+        _row(2.5, 9.0),
+        _row(3.0, 9.0),     # SAME as Z2 anchor
+        _row(4.0, 11.0),
+        _row(6.0, 12.0),
+        _row(8.0, 13.0),
+    )
+    zones = suggest_zones(rows, _HF_LINEAR, v_max=13.5, is_lauf=True)
+    by_name = {z.name: z for z in zones}
+    assert "Z1" in by_name, "Z1 should still be present, just collapsed"
+    z1 = by_name["Z1"]
+    assert z1.is_collapsed_with_z2 is True
+    assert z1.is_open_lower is False
+    # Empty fields → renderer shows "—" instead of duplicating Z2 anchor.
+    assert z1.intensitaet_max is None
+    assert z1.pace_min_min_per_km is None
+    assert z1.herzfrequenz_max is None
+
+
+def test_z1_not_collapsed_in_normal_case():
+    """Normal Rainier-like spread: Z1 stays open-lower, NOT collapsed."""
+    zones = suggest_zones(_full_rows(), _HF_LINEAR, v_max=13.5, is_lauf=True)
+    z1 = next(z for z in zones if z.name == "Z1")
+    assert z1.is_collapsed_with_z2 is False
+    assert z1.is_open_lower is True
+    assert z1.intensitaet_max == 9.0

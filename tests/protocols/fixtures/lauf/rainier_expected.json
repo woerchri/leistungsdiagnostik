@@ -176,7 +176,7 @@
     },
     {
       "name": "Z3",
-      "ziel": "metabolische Stabilität",
+      "ziel": "Aerobe Entwicklung",
       "rpe_min": 5,
       "rpe_max": 6,
       "intensitaet_min": 7.065,
@@ -218,7 +218,7 @@
     },
     {
       "name": "Z6",
-      "ziel": "neuromuskulär",
+      "ziel": "Sprint- und Maximalreize",
       "rpe_min": 10,
       "rpe_max": 10,
       "intensitaet_min": 11.438,
@@ -262,7 +262,7 @@
     },
     {
       "name": "Z3",
-      "ziel": "metabolische Stabilität",
+      "ziel": "Aerobe Entwicklung",
       "rpe_min": 5,
       "rpe_max": 6,
       "intensitaet_min": 7.065,
@@ -304,7 +304,7 @@
     },
     {
       "name": "Z6",
-      "ziel": "neuromuskulär",
+      "ziel": "Sprint- und Maximalreize",
       "rpe_min": 10,
       "rpe_max": 10,
       "intensitaet_min": 11.438,

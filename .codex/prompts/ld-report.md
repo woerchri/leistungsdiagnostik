@@ -50,7 +50,7 @@ ausschließlich aus `uv run python -m ld.run`.
    {
      "zusammenfassung": "...",                  // 120-150 Wörter
      "schwellen": "...",                        // 120-150 Wörter
-     "coaching_ausblick_3_4_wochen": "...",     // 3-5 Leitlinien + Beispielwoche, max 280 Wörter
+     "coaching_ausblick_3_4_wochen": "...",     // 3-5 Empfehlungen, max 180 Wörter — KEINE Beispielwoche
      "ernaehrung": "...",                       // 1 Absatz, 1-100 Wörter (kurz wenn wenig zu sagen)
      "risiko": "..."                            // optional — interne Notiz Seite 5
    }
@@ -73,26 +73,23 @@ ausschließlich aus `uv run python -m ld.run`.
      aerobe Schwelle, wo der Übergang zur Schwellenleistung, wie beeinflusst
      die Kurvenform die Zoneneinteilung.
    - **Trainingsbereiche-Absatz nicht erzeugen** — die Tabelle reicht.
-   - **Nächste 3-4 Wochen (max 280 Wörter):** ZWEITEILIG nach Anna 2026-05-17:
-     1. **3-5 Leitlinien** als kurze Bullets oder Sätze. Form: "In den
-        kommenden 3-4 Wochen sollte der Fokus auf … liegen."
-     2. **Beispielwoche** als Mo-So-Liste mit konkreten Einheitsvorschlägen,
-        Beispiel-Format:
-        - Mo: 30 min Z3 (kontrolliertes Tempo)
-        - Di: Pause oder 30 min Z1 (Regeneration)
-        - Mi: 60-90 min Z2 (Grundlage)
-        - Do: 4×4 min Z4 (Intervalle), Trabpausen
-        - Fr: Pause
-        - Sa: 90 min Z2 (langer Lauf)
-        - So: Pause
-     Die Beispielwoche ist EIN konkreter Vorschlag, kein verbindlicher Plan —
-     Anna passt mit der Athletin an. Volumen an Testbild + bisheriges
-     Trainingsumfang anpassen.
+   - **Empfehlungen (max 180 Wörter)** — Anna 2026-05-17 (Round 3, supersedes
+     Round 2): KEINE Beispielwoche mehr (war Round-2-Entscheidung, wurde
+     reverted — fühlte sich erfunden an und sprengte das 5-Seiten-Budget).
+     Stattdessen 3-5 konkrete Empfehlungen als kompakter Absatz oder
+     knappe Liste. Form: "In den kommenden 3-4 Wochen sollte der Fokus auf …
+     liegen." Bezug auf die nächsten 3-4 Wochen darf bestehen, aber NIE als
+     Mo-So-Wochenstruktur. Volumen an Testbild + bisheriges Trainingsumfang
+     anpassen.
    - **Energie & Regeneration (1-100 Wörter):** allgemeine, evidenzbasierte
-     Empfehlungen vor/während/nach Einheiten. KEINE Kalorienpläne, KEINE
-     medizinische Diätberatung. Wenn der Test nicht viel Ernährungs-relevanten
-     Stoff hergibt (z.B. sehr kurzer Stufentest ohne lange Belastungsdauer):
-     ruhig auf einen kurzen Absatz beschränken. Beispielrahmen:
+     Empfehlungen vor/während/nach Einheiten. **WICHTIG (Anna 2026-05-17):
+     Beginne den Absatz mit dem Vornamen** (z.B. "Rainier, vor intensiven
+     Einheiten…"). Derselbe direkte Stil wie in der Zusammenfassung. NIE
+     generisch "Athlet:in" oder "Teilnehmer:in" formulieren. KEINE
+     Kalorienpläne, KEINE medizinische Diätberatung. Wenn der Test nicht viel
+     Ernährungs-relevanten Stoff hergibt (z.B. sehr kurzer Stufentest ohne
+     lange Belastungsdauer): ruhig auf einen kurzen Absatz beschränken.
+     Beispielrahmen:
      - Vor intensiven/längeren Einheiten kohlenhydratbetont und verträglich.
      - Bei Einheiten >60-75 min Kohlenhydrate/Flüssigkeit planen.
      - Nach belastenden Einheiten Kohlenhydrate plus Protein und Flüssigkeit.
@@ -126,6 +123,11 @@ ausschließlich aus `uv run python -m ld.run`.
      (https://pubmed.ncbi.nlm.nih.gov/36640771/,
       https://pubmed.ncbi.nlm.nih.gov/39830026/,
       https://pubmed.ncbi.nlm.nih.gov/37804419/).
+   - **Round-3-Quellenupdate (Anna 2026-05-17)** — aktuelle Meta-Analysen, die
+     du für Tonfall und Empfehlungen mitdenken sollst:
+     - HIIT vs. SIT Meta-Analyse 2026: https://pubmed.ncbi.nlm.nih.gov/41740126/
+     - HIIT/SIT bei trainierten Läufer:innen 2026: https://pubmed.ncbi.nlm.nih.gov/41666911/
+     - Running economy HIIT/MICT Meta-Analyse 2025: https://pubmed.ncbi.nlm.nih.gov/41766811/
 
    **Gute Formulierungen:** "gezielt dosierte VO2max-Reize",
    "kurze kontrollierte hochintensive Intervalle",

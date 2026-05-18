@@ -85,6 +85,9 @@ proto_rows = [
     ("Ausbelastung",                       "Ja",                          "JA oder NEIN"),
     ("Nachbelastungslaktat 3min (mmol/l)", None,                          "Optional — Laktatwert 3 min nach Belastung"),
     ("Nachbelastungslaktat 5min (mmol/l)", None,                          "Optional — Laktatwert 5 min nach Belastung"),
+    # Round 3 (Anna 2026-05-17): Ruhelaktat + Steigung als eigene Felder.
+    ("Ruhelaktat (mmol/l)",                1.0,                           "Optional — Laktat vor Testbeginn"),
+    ("Steigung (%)",                       1.0,                           "Optional — Laufband-/Strecken-Steigung in Prozent"),
 ]
 for i, (k, v_, n) in enumerate(proto_rows, start=2):
     kv(ws2, i, k, v_, n)

@@ -111,8 +111,9 @@ def test_reference_renders_to_five_pages(tmp_path):
     assert "Analyse" in texts[2] and "Schwellenschnittpunkte" in texts[2], \
         "Page 3 must hold the analysis tables"
     assert "Trainingsbereiche" in texts[2], "Page 3 must hold the zone table"
-    assert "Interpretation" in texts[3] and "Nächste 3-4 Wochen" in texts[3], \
-        "Page 4 must hold the four interpretation blocks"
+    # Round 3 (Anna 2026-05-17): heading renamed from "Nächste 3-4 Wochen" to "Empfehlungen".
+    assert "Interpretation" in texts[3] and "Empfehlungen" in texts[3], \
+        "Page 4 must hold the four interpretation blocks (Empfehlungen renamed in Round 3)"
     assert "Energie & Regeneration" in texts[3], \
         "Page 4 must include the nutrition block"
     assert "Trainerseite" in texts[4] and "Intern" in texts[4], \

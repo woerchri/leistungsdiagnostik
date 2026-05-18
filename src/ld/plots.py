@@ -72,8 +72,17 @@ def render_main_diagram(result: AnalysisResult, out_dir: Path) -> Path:
     _draw_zone_bands(ax_lk, result, x_min=x_min, x_max=x_max)
 
     # --- Laktat (left axis, red). Square markers per Round 2 — distinct from HF.
+    # Round 3 (Anna 2026-05-17): weiße Marker-Ränder + höhere zorder beheben den
+    # Overlap des ersten HF- und ersten Laktat-Punkts, ohne die Achsen zu verzerren
+    # (Anna ausdrücklich: "nicht primär die Achsen verzerren"). Laktat liegt
+    # bewusst leicht vor HF (zorder=5 vs 4), damit der Quadrat-Marker bei
+    # gleichem Pixel sichtbar bleibt.
     ax_lk.plot(x_fine, lk_fit, color=_COLOR_LAKTAT, linewidth=2, zorder=3)
-    ax_lk.plot(x_data, lk_data, _MARKER_LAKTAT, color=_COLOR_LAKTAT, markersize=6, zorder=4)
+    ax_lk.plot(
+        x_data, lk_data, _MARKER_LAKTAT,
+        color=_COLOR_LAKTAT, markersize=7, zorder=5,
+        markeredgecolor="white", markeredgewidth=0.9,
+    )
     ax_lk.set_xlabel(_x_label_de(result))
     ax_lk.set_ylabel("Laktat (mmol/l)", color=_COLOR_LAKTAT)
     ax_lk.tick_params(axis="y", labelcolor=_COLOR_LAKTAT)
@@ -86,9 +95,17 @@ def render_main_diagram(result: AnalysisResult, out_dir: Path) -> Path:
     ax_lk.set_yticks(np.arange(0, lk_max + 1.0 + 0.1, lk_tick))
 
     # --- HF (right axis, blue). Circle markers — distinct from Laktat squares.
+    # Weiße Marker-Ränder analog zu Laktat. zorder leicht unter Laktat-Markern
+    # damit ein Überlapp den dunkleren/größeren roten Quadrat zeigt, aber der
+    # blaue Kreis durch den weißen Rand trotzdem als zweiter Punkt erkennbar
+    # bleibt.
     ax_hf = ax_lk.twinx()
     ax_hf.plot(x_fine, hf_fit, color=_COLOR_HF, linewidth=2, zorder=3)
-    ax_hf.plot(x_data, hf_data, _MARKER_HF, color=_COLOR_HF, markersize=6, zorder=4)
+    ax_hf.plot(
+        x_data, hf_data, _MARKER_HF,
+        color=_COLOR_HF, markersize=7, zorder=4,
+        markeredgecolor="white", markeredgewidth=0.9,
+    )
     ax_hf.set_ylabel("Herzfrequenz (bpm)", color=_COLOR_HF)
     ax_hf.tick_params(axis="y", labelcolor=_COLOR_HF)
 

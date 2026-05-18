@@ -36,14 +36,32 @@ def test_prompt_warns_against_invented_weekplans():
     assert "wochenplan" in src or "trainingsplan" in src or "erfinden" in src or "erfundene" in src
 
 
-def test_prompt_requires_beispielwoche_in_coaching_ausblick():
-    """Anna 2026-05-17 Round 2.1 decision #4 — the 3-4-Wochen-Ausblick
-    must include a concrete Beispielwoche (Mo-So sample week)."""
+def test_prompt_forbids_beispielwoche_in_coaching_ausblick():
+    """Round 3 revert (Anna 2026-05-17): the Round-2 Beispielwoche-decision
+    was reversed — Mo-So sample weeks felt fabricated and pushed the report
+    past 5 pages. The prompt must NOT instruct Codex to produce one.
+
+    The string `Beispielwoche` may still appear as a NEGATIVE marker (i.e.
+    'KEINE Beispielwoche'), so we look specifically for the imperative ask
+    (Beispielwoche-Liste mit Mo:/Di:/… oder '"beispielwoche"' als JSON-Schlüssel)."""
     src = PROMPT.read_text().lower()
-    assert "beispielwoche" in src, "Codex prompt must request a Beispielwoche"
-    # Sanity-check: the Mo-So week format should be hinted at.
-    assert "mo:" in src or "montag" in src or "mo-so" in src, \
-        "Prompt should show the Mo-So sample-week format"
+    # Mo-So week-format hints must be absent.
+    assert "mo:" not in src, (
+        "Prompt still shows Mo-So sample-week format — Round 3 removed it."
+    )
+    assert '"beispielwoche"' not in src, (
+        "Prompt still has 'beispielwoche' as a JSON schema key — Round 3 removed it."
+    )
+
+
+def test_prompt_requires_vorname_in_ernaehrung():
+    """Round 3 (Anna 2026-05-17): Energie & Regeneration must address the
+    athlete by first name, mirroring the Zusammenfassung tone."""
+    src = PROMPT.read_text().lower()
+    # Look for both the rule wording AND a section anchor.
+    assert "vorname" in src
+    # The directive should be tied to the Energie/ernaehrung section name.
+    assert "energie" in src or "ernährung" in src or "ernaehrung" in src
 
 
 def test_prompt_allows_short_ernaehrung():

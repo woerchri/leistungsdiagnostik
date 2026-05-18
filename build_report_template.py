@@ -1,11 +1,15 @@
 """Build templates/report.docx — 5-page A4 landscape Leistungsdiagnostik report.
 
-Round-2 layout (Anna 2026-05-13):
-  Page 1: Deckblatt — Logo, Titel, Name, Datum/Ort. KEIN "Erstellt von …".
-  Page 2: Athletendaten + Testprotokoll (nebeneinander) + Rohdaten-Tabelle + Plot.
-  Page 3: Schwellenschnittpunkte (Pivot, post-render) + Trainingsbereiche (zonenfarbig).
+Round-3 layout (Anna 2026-05-17, supersedes Round 2):
+  Page 1: Deckblatt — Logo, Titel, Name, Datum/Ort, kleine Kontaktzeile.
+          KEIN "Erstellt von …".
+  Page 2: Athletendaten + Testprotokoll (mit Ruhelaktat, Steigung, Dauer letzte
+          Stufe) + Rohdaten-Tabelle + Plot.
+  Page 3: Schwellenschnittpunkte (Pivot, post-render, Word-Whitelist) +
+          Trainingsbereiche (zonenfarbig) + Trainingsformen-Mini-Tabelle.
   Page 4: Interpretation in 4 Blöcken — Zusammenfassung, Schwellen & Zonen,
-          Nächste 3-4 Wochen, Energie & Regeneration.
+          Empfehlungen (umbenannt von "Nächste 3-4 Wochen", ohne Beispielwoche),
+          Energie & Regeneration.
   Page 5: Trainerseite intern — 2×2-Kachelgrid (Pflichtprüfungen, Risiko,
           Schwellenlogik, Testqualität) + Trainernotizen-Tabelle.
 
@@ -34,7 +38,7 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
 OUT = Path("templates/report.docx")
-LOGO = Path("assets/logo_placeholder.png")
+LOGO = Path("assets/logo.jpeg")  # Anna 2026-05-17 (Round 3) — real logo replaces placeholder.
 OUT.parent.mkdir(exist_ok=True)
 
 # ── Brand tokens ─────────────────────────────────────────────────────────────
@@ -302,6 +306,17 @@ meta_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 meta_run = meta_p.add_run("{{ testprotokoll.testdatum }}  ·  {{ testprotokoll.durchfuehrungsort }}")
 meta_run.font.size = Pt(12); meta_run.font.color.rgb = TEXT
 
+# Round 3 P0-3 (Anna 2026-05-17): Kontaktzeile unten am Deckblatt — klein,
+# zurückhaltend. Deckblatt bleibt ruhig/premium, aber Kontakt darf erscheinen
+# (Deckblatt wird oft separat geteilt/gedruckt). "Erstellt von..." bleibt entfernt.
+for _ in range(3):
+    doc.add_paragraph()
+
+contact_p = doc.add_paragraph()
+contact_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+contact_run = contact_p.add_run(f"{CONTACT_EMAIL}  |  {CONTACT_PHONE}")
+contact_run.font.size = Pt(9); contact_run.font.color.rgb = FOOTER_GREY
+
 
 # ── PAGE 2: Athletendaten + Testprotokoll + Rohdaten + Plot ─────────────────
 page_break()
@@ -333,6 +348,10 @@ add_two_column_kv(
         ("Anfangsbelastung","{{ testprotokoll.anfangsbelastung_display }}"),
         ("Stufeninkrement", "{{ testprotokoll.stufeninkrement_display }}"),
         ("Stufendauer",     "{{ testprotokoll.stufendauer_min }} min"),
+        # Round 3 P0-2 (Anna 2026-05-17): Ruhelaktat, Steigung, Dauer letzte Stufe.
+        ("Ruhelaktat",      "{{ testprotokoll.ruhelaktat_display }}"),
+        ("Steigung",        "{{ testprotokoll.steigung_display }}"),
+        ("Dauer letzte Stufe", "{{ testprotokoll.dauer_letzte_stufe_display }}"),
         ("Ausbelastung",    "{{ ausbelastung_de }}"),
         ("{{ v_max_label }}", "{{ v_max_display }}"),
     ],
@@ -420,6 +439,23 @@ add_table_with_loop(
     body_font_size=9.5,
 )
 
+# Round 3 P1-1 (Anna 2026-05-17): Trainingsformen-Tabelle direkt unter
+# Trainingsbereiche — Variante B (2-spaltige Mini-Tabelle, kleine Schrift).
+# Variante A (Spalte in Trainingsbereiche) wurde verworfen, weil Seite 3 zu
+# breit würde. Inhalt ist statisch je Zone — kein Loop nötig, ein Render mit
+# Jinja-Variablen reicht.
+doc.add_paragraph()
+heading("Beschreibung / Methode Trainingsformen", level=3, size_pt=10)
+add_table_with_loop(
+    headers=["Zone", "Methode / Trainingsform"],
+    row_template=["{{ tf.name }}", "{{ tf.methode }}"],
+    loop_var="tf",
+    items_var="trainingsformen",
+    header_widths_cm=[2.0, 24.5],
+    header_font_size=8.5,
+    body_font_size=8.5,
+)
+
 
 # ── PAGE 4: Interpretation (4 Blöcke) ───────────────────────────────────────
 page_break()
@@ -431,7 +467,9 @@ body("{{ interp_zusammenfassung }}")
 heading("Schwellen & Zonen", level=2)
 body("{{ interp_schwellen }}")
 
-heading("Nächste 3-4 Wochen", level=2)
+# Round 3 P0-9 (Anna 2026-05-17): "Nächste 3-4 Wochen" → "Empfehlungen".
+# Beispielwoche wird auf Prompt-Ebene entfernt (siehe .codex/prompts/ld-report.md).
+heading("Empfehlungen", level=2)
 body("{{ interp_coaching_ausblick }}")
 
 heading("Energie & Regeneration", level=2)
@@ -506,11 +544,27 @@ def _build_footer(section, *, primary_color: RGBColor = PRIMARY) -> None:
     for c in cells:
         _set_cell_no_borders(c)
 
-    # Left: Kontakt.
-    cl = cells[0].paragraphs[0]
-    cl.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    run = cl.add_run(f"{CONTACT_EMAIL}  ·  {CONTACT_PHONE}")
-    run.font.size = Pt(8); run.font.color.rgb = FOOTER_GREY
+    # Left: Kontakt — Round 3 P0-10 (Anna 2026-05-17): zwei Zeilen untereinander
+    # statt "email · phone". Wirkt ruhiger und professioneller. Erster
+    # Paragraph nimmt die obere Trennlinie via pBdr; Email steht im zweiten
+    # Paragraph der Zelle, Telefon im dritten.
+    cl_email = cells[0].paragraphs[0]
+    cl_email.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    r_email = cl_email.add_run(CONTACT_EMAIL)
+    r_email.font.size = Pt(8); r_email.font.color.rgb = FOOTER_GREY
+
+    cl_phone = cells[0].add_paragraph()
+    cl_phone.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    # Tighten spacing between the two lines.
+    cl_phone_pPr = cl_phone._element.get_or_add_pPr()
+    cl_phone_spacing = OxmlElement("w:spacing")
+    cl_phone_spacing.set(qn("w:before"), "0")
+    cl_phone_spacing.set(qn("w:after"), "0")
+    cl_phone_spacing.set(qn("w:line"), "240")
+    cl_phone_spacing.set(qn("w:lineRule"), "auto")
+    cl_phone_pPr.append(cl_phone_spacing)
+    r_phone = cl_phone.add_run(CONTACT_PHONE)
+    r_phone.font.size = Pt(8); r_phone.font.color.rgb = FOOTER_GREY
 
     # Center: Seitenzahl.
     cm = cells[1].paragraphs[0]

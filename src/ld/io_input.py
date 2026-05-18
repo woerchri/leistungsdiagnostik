@@ -154,6 +154,9 @@ def _parse_testprotokoll(wb) -> Testprotokoll:
     # Optional post-exertion lactate (Anna 2026-05-13 — recovery indicator).
     nachbel_3 = _float_or_none(_kv(ws, "Nachbelastungslaktat 3min (mmol/l)"))
     nachbel_5 = _float_or_none(_kv(ws, "Nachbelastungslaktat 5min (mmol/l)"))
+    # Round 3 (Anna 2026-05-17): Ruhelaktat und Steigung als eigene optionale Felder.
+    ruhelaktat = _float_or_none(_kv(ws, "Ruhelaktat (mmol/l)"))
+    steigung = _float_or_none(_kv(ws, "Steigung (%)"))
 
     return Testprotokoll(
         testdatum=test_date,
@@ -171,6 +174,8 @@ def _parse_testprotokoll(wb) -> Testprotokoll:
         ausbelastung=yesno("Ausbelastung"),
         nachbelastungslaktat_3min_mmol=nachbel_3,
         nachbelastungslaktat_5min_mmol=nachbel_5,
+        ruhelaktat_mmol=ruhelaktat,
+        steigung_prozent=steigung,
     )
 
 
