@@ -8,12 +8,22 @@ from ld.types import AnalysisResult
 
 
 def write_redacted(result: AnalysisResult, out_path: Path) -> Path:
-    """Strip identifying fields (Name, Geburtsjahr, Email) before LLM consumption.
-    Derived `alter` is preserved in `alter_fuer_interpretation` when available.
+    """Strip strong identifiers (Nachname, Geburtsjahr, Email) before LLM
+    consumption. Vorname BLEIBT — der Codex-Prompt verlangt persönliche
+    Ansprache mit Vornamen ("Rainier, deine Schwelle …"), und ohne Vornamen
+    in der JSON müsste Codex jedes Mal nachfragen.
+
+    Anna 2026-05-18 (Screenshot-Feedback): "warum fragt er nach dem Namen,
+    wenn der schon im Input ist?" — weil wir ihn vorher unnötig redacted
+    hatten. Vorname allein ist kein starker Identifier; Nachname + Geburtsjahr
+    + Email zusammen wären es. Die strippen wir weiter.
+
+    Derived `alter` wird in `alter_fuer_interpretation` mitgeführt, wenn
+    `geburtsjahr` gesetzt war (sonst None).
     """
     data = asdict(result)
     athlete = data["test_run"]["athlete"]
-    athlete["vorname"] = "Athlet:in"
+    # Vorname bleibt im Klartext — wird in der Interpretation als Anrede gebraucht.
     athlete["name"] = "X"
     athlete["geburtsjahr"] = None
     athlete["email"] = None
