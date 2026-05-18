@@ -25,13 +25,12 @@ _TEMPLATE_PATH = Path(__file__).parent.parent.parent / "templates" / "report.doc
 # gefiltert (Wert nur, wenn er innerhalb des gemessenen Bereichs liegt).
 _WORD_REPORT_LAKTAT_WHITELIST: tuple[float, ...] = (1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0)
 _WORD_REPORT_LAKTAT_REACHED_ONLY: tuple[float, ...] = (8.0,)
-# Round 4 (Anna 2026-05-18) — Grafik MUSS deutlich größer sein, "Restplatz
-# maximal ausnützen". Plot ist jetzt full-width unter den Tabellen statt
-# side-by-side. A4 quer mit 1.6 cm Seitenrändern → 26.5 cm Nutzbreite.
-# Plot-Aspect ist 14:3.5 (4:1) — bei 25 cm Breite ergibt das ~6.25 cm Höhe,
-# was zusammen mit KV-Block (~6 cm) + Rohdaten-Tabelle (~3.5 cm) das
-# 5-Seiten-Budget hält.
-_PLOT_WIDTH_CM = 25.0
+# Round 4 follow-up (Anna 2026-05-18, screenshot feedback): zurück zu
+# side-by-side mit Rohdaten links / Plot rechts. Die rechte Zelle ist 13.5 cm
+# breit; Plot bei 13 cm lässt etwas Padding. Die VERTIKALE Höhe holen wir
+# über das Aspect-Ratio in plots.py — figsize (10, 6.5) gibt bei 13 cm
+# Plotbreite ~8.5 cm Höhe, deutlich präsenter als die alten 3.25 cm.
+_PLOT_WIDTH_CM = 13.0
 
 # Brand tokens — mirrored from build_report_template.py.
 _PRIMARY = RGBColor(0x0B, 0x25, 0x45)
@@ -220,6 +219,26 @@ def render(
                 # nicht mehr als separate Mini-Tabelle. Inhalt statisch aus ZONE_METHODE.
                 "methode": ZONE_METHODE.get(z.name, ""),
             })
+
+        # Round 4 follow-up (Anna 2026-05-18, screenshot feedback): "wenn die
+        # ersten zwei Zeilen die gleichen Werte haben, dann in Z1 Felder
+        # Geschwindigkeit, Pace und HF entfernen". Die strukturelle
+        # Collapse-Erkennung in zones.py greift nur bei v_lk2==v_lk3 — der
+        # häufigere Fall ist aber, dass Z2 mit `intensitaet_min=None` aufgebaut
+        # ist und daher dieselbe `≤ v_lk2`-Darstellung produziert wie Z1.
+        # Semantischer Post-Render-Check: identische dargestellte Werte →
+        # Z1-Numerikspalten leeren. Methode, Ziel und RPE bleiben sichtbar.
+        if len(out) >= 2 and out[0]["name"] == "Z1" and out[1]["name"] == "Z2":
+            z1, z2 = out[0], out[1]
+            same = (
+                z1["intensitaet_range"] == z2["intensitaet_range"]
+                and z1["pace_range"] == z2["pace_range"]
+                and z1["herzfrequenz_range"] == z2["herzfrequenz_range"]
+            )
+            if same:
+                z1["intensitaet_range"] = ""
+                z1["pace_range"] = ""
+                z1["herzfrequenz_range"] = ""
         return tuple(out)
 
     def _render_steps() -> tuple:

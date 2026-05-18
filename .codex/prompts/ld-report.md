@@ -60,16 +60,26 @@ ausschließlich aus `uv run python -m ld.run`.
 
    - **Sprache:** Deutsch, direkt mit Vorname ansprechen ("Rainier, deine
      Schwelle liegt bei…"). NIE "Athlet:in" oder "Teilnehmer:in" sagen.
-   - **Echte Umlaute, niemals ASCII-Ersatz (Anna 2026-05-18 Round 4 P0-6):**
-     Verwende IMMER `ä`, `ö`, `ü`, `ß`. NIEMALS `ae`, `oe`, `ue`, `ss` als
-     Ersatz. Beispiele: `für` (nicht `fuer`), `können` (nicht `koennen`),
-     `nächste` (nicht `naechste`), `Ernährung` (nicht `Ernaehrung`),
-     `Läufer:innen` (nicht `Laeufer:innen`), `größere` (nicht `groessere`),
-     `Ausdauer` ist sowieso schon korrekt, aber `müssen`, `dürfen`, `häufig`,
-     `Übergänge`, `höhere` alle mit echten Umlauten. Gilt für ALLE Output-
-     Felder (zusammenfassung, schwellen, coaching_ausblick_3_4_wochen,
-     ernaehrung, risiko). Der JSON-Key `ernaehrung` bleibt aus
-     Kompatibilitätsgründen ASCII — der INHALT verwendet echte Umlaute.
+   - **Echte Umlaute von Anfang an, kein nachträgliches Korrigieren
+     (Anna 2026-05-18 Round 4 P0-6):** Schreibe `ä`, `ö`, `ü`, `ß` direkt
+     beim Verfassen — nicht erst `ae/oe/ue/ss` und dann ersetzen. Es gibt
+     KEIN automatisches Post-Processing: was du in die JSON schreibst,
+     landet 1:1 im Wordbericht für die Athlet:innen. Wenn du `fuer`
+     schreibst, steht im finalen Premium-Report `fuer`.
+     - Beispiele für die HÄUFIGSTEN Fehler — bitte ab Wort 1 korrekt:
+       `für`, `können`, `müssen`, `dürfen`, `häufig`, `höhere`, `nächste`,
+       `nächsten`, `Übergänge`, `Ernährung`, `Verträglichkeit`, `Läufer:innen`,
+       `größere`, `Stärken`, `Schwächen`, `Pflichtprüfungen`,
+       `Maximalgeschwindigkeit`, `Schwellenleistung`, `Ausdauerläufer:innen`,
+       `lässt`, `während`, `gemäß`, `Wettkämpfe`.
+     - Gilt für ALLE Output-Felder: `zusammenfassung`, `schwellen`,
+       `coaching_ausblick_3_4_wochen`, `ernaehrung`, `risiko`.
+     - Der JSON-KEY `ernaehrung` bleibt aus Kompatibilitätsgründen ASCII —
+       der INHALT des Feldes verwendet trotzdem echte Umlaute
+       (z.B. `"ernaehrung": "Rainier, vor längeren Einheiten…"`).
+     - **Selbst-Check vor dem Speichern:** lies jedes Feld einmal durch
+       und prüfe, dass keine `ae/oe/ue/ss`-Schreibweise vorkommt
+       (außer in Eigennamen oder im ASCII-Key `ernaehrung`).
    - **Maximalgeschwindigkeit** statt "v_max" oder "maximale Geschwindigkeit".
    - **RPE auf 0-10 (Borg CR10)** — wenn du subjektive Belastung erwähnst,
      auf dieser Skala formulieren.

@@ -11,10 +11,15 @@ import numpy as np
 from ld.types import AnalysisResult
 
 
-_FIGSIZE = (16.0, 2.6)  # Round 4 (Anna 2026-05-18): wider+shorter so the
-                        # full-width Page-2 plot (~25 cm wide) keeps its
-                        # height ~4.1 cm and the data block + Rohdaten table
-                        # still fit on Page 2 inside the 5-page budget.
+_FIGSIZE = (10.0, 5.4)  # Round 4 follow-up (Anna 2026-05-18, screenshot
+                        # feedback): vorher (14, 3.5) lieferte side-by-side
+                        # bei 13 cm Breite nur ~3.25 cm Höhe — zu gequetscht.
+                        # Jetzt 10:5.4 Aspect → bei 13 cm Breite ergibt das
+                        # ~7.0 cm Höhe, also +115 % vertikal. Side-by-side
+                        # mit Rohdaten links: die Tabellenzeile auf Seite 2
+                        # wächst dadurch in der Zellhöhe auf Plot-Höhe.
+                        # (10, 6.5) gab 8.5 cm und sprengte das 5-Seiten-
+                        # Budget bei den Reference-Fixtures.
 _DPI = 150
 _COLOR_LAKTAT = "#E63946"   # Rot — Laktatkurve
 _COLOR_HF = "#1F77B4"        # Blau — HF-Linie

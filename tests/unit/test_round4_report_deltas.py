@@ -135,7 +135,98 @@ def _build_z1_collapsed_testrun() -> TestRun:
     return TestRun(athlete=athlete, testprotokoll=proto, steps=steps, coaching=coaching)
 
 
-def test_z1_collapsed_renders_empty_cells_not_dash(tmp_path):
+def test_z1_blanked_when_values_match_z2(tmp_path):
+    """Round 4 follow-up (Anna 2026-05-18, screenshot feedback): wenn Z1
+    und Z2 dieselben dargestellten Werte für Geschwindigkeit/Pace/HF haben,
+    werden Z1-Felder geleert. Der Test nutzt die Rainier-Fixture, weil mit
+    der aktuellen zones.py-Logik (Z2 als open-lower aufgebaut) Z1 und Z2
+    IMMER dieselben Werte zeigen — der Post-Render-Check muss daher in
+    diesem Realfall zuschlagen.
+
+    Z2 behält seine Werte; Z1 zeigt nur noch Zone/Ziel/RPE/Methode."""
+    _, docx_path = _render_rainier(tmp_path)
+    doc = Document(str(docx_path))
+
+    zones_table = next(
+        t for t in doc.tables
+        if t.rows and "Zone" in [c.text.strip() for c in t.rows[0].cells]
+           and "Ziel" in [c.text.strip() for c in t.rows[0].cells]
+    )
+    header = [c.text.strip() for c in zones_table.rows[0].cells]
+    z1_row = next(r for r in zones_table.rows[1:]
+                  if r.cells and r.cells[0].text.strip() == "Z1")
+    z2_row = next(r for r in zones_table.rows[1:]
+                  if r.cells and r.cells[0].text.strip() == "Z2")
+    z1_cells = [c.text.strip() for c in z1_row.cells]
+    z2_cells = [c.text.strip() for c in z2_row.cells]
+
+    intens_idx = header.index("Geschwindigkeit (km/h)")
+    pace_idx = header.index("Pace (min/km)")
+    hf_idx = header.index("Herzfrequenz (bpm)")
+    methode_idx = header.index("Methode / Trainingsform")
+    rpe_idx = header.index("RPE (0-10)")
+
+    # Z2 zeigt seine Werte ganz normal.
+    assert z2_cells[intens_idx] != "", "Z2 Intensität sollte sichtbar bleiben"
+    assert z2_cells[pace_idx] != "", "Z2 Pace sollte sichtbar bleiben"
+    assert z2_cells[hf_idx] != "", "Z2 HF sollte sichtbar bleiben"
+
+    # Z1 hat dieselben Werte gehabt (open_lower mit hi=v_lk2) — jetzt leer.
+    assert z1_cells[intens_idx] == "", (
+        f"Z1 Intensität sollte LEER sein (matchte Z2), war {z1_cells[intens_idx]!r}"
+    )
+    assert z1_cells[pace_idx] == "", (
+        f"Z1 Pace sollte LEER sein (matchte Z2), war {z1_cells[pace_idx]!r}"
+    )
+    assert z1_cells[hf_idx] == "", (
+        f"Z1 HF sollte LEER sein (matchte Z2), war {z1_cells[hf_idx]!r}"
+    )
+    # Methode + RPE bleiben — Z1 verschwindet nicht aus der Tabelle.
+    assert z1_cells[methode_idx] == "Dauermethode bis 30'"
+    assert z1_cells[rpe_idx] == "0 – 2"
+
+
+def test_z1_keeps_values_when_distinct_from_z2(tmp_path):
+    """Negativ-Test: Wenn Z1 und Z2 unterschiedliche Werte haben (etwa weil
+    Z2 einen echten lower bound bekommt), darf Z1 nicht leergeräumt werden.
+    Wir konstruieren das per dataclasses.replace auf der Rainier-Basis."""
+    from dataclasses import replace
+
+    run = io_input.parse_input(FIXTURE)
+    result = protocols.analyze(run)
+
+    # Verschiebe Z2's lower bound künstlich, damit Z2 anders rendert als Z1.
+    new_zones = tuple(
+        replace(z, intensitaet_min=z.intensitaet_max - 0.5,
+                herzfrequenz_min=(z.herzfrequenz_max - 5) if z.herzfrequenz_max else None,
+                pace_max_min_per_km="08:00")
+        if z.name == "Z2" else z
+        for z in result.zones_final
+    )
+    result = replace(result, zones_final=new_zones)
+
+    plot_path = plots.render_main_diagram(result, tmp_path / "plots")
+    out = tmp_path / "out.docx"
+    report.render(result, plot_path, out, interpretation=None)
+
+    doc = Document(str(out))
+    zones_table = next(
+        t for t in doc.tables
+        if t.rows and "Zone" in [c.text.strip() for c in t.rows[0].cells]
+    )
+    header = [c.text.strip() for c in zones_table.rows[0].cells]
+    z1_row = next(r for r in zones_table.rows[1:]
+                  if r.cells and r.cells[0].text.strip() == "Z1")
+    z1_cells = [c.text.strip() for c in z1_row.cells]
+    intens_idx = header.index("Geschwindigkeit (km/h)")
+    # Z1 sollte nicht leer sein, weil Z2 jetzt einen Range zeigt statt "≤".
+    assert z1_cells[intens_idx] != "", (
+        "Wenn Z1 und Z2 unterschiedlich rendern, sollten Z1-Felder NICHT geleert "
+        f"werden — gerendert wurde {z1_cells[intens_idx]!r}"
+    )
+
+
+def test_z1_forced_collapsed_renders_empty_cells_not_dash(tmp_path):
     """Round 4 P0-2: wenn Z1 mit Z2 zusammenfällt, sind Intensität/Pace/HF
     in der Z1-Zeile WIRKLICH LEER (kein '—'). '—' wirkt auf Athlet:innen wie
     'Wert fehlt', während die leere Zelle 'kein eigener Bereich, siehe Z2'

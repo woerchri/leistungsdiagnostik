@@ -226,9 +226,11 @@ def add_two_column_kv(left_rows: list[tuple[str, str]],
         run = cell.paragraphs[0].add_run(title)
         run.font.bold = True; run.font.size = Pt(12); run.font.color.rgb = PRIMARY
 
-    # Inner KV-tables in row 1, one per side. Round 4 (Anna 2026-05-18): 8 pt
-    # statt 8.5 pt + tight spacing — Page 2 muss Daten-Block + Rohdaten +
-    # voller Plot tragen, jeder halbe Millimeter Zeilenhöhe zählt.
+    # Inner KV-tables in row 1, one per side. Round 4 follow-up
+    # (Anna 2026-05-18): tight paragraph spacing (line 240 / before & after 0),
+    # damit die 14 KV-Zeilen kompakt bleiben und unterhalb genug vertikaler
+    # Platz für den jetzt deutlich höheren Side-by-side-Plot übrig bleibt.
+    # Font bleibt 8.5 pt — Anna soll die Werte gut lesen können.
     for col, rows in enumerate((left_rows, right_rows)):
         host_cell = outer.cell(1, col)
         # Replace placeholder paragraph with a sub-table.
@@ -241,21 +243,18 @@ def add_two_column_kv(left_rows: list[tuple[str, str]],
             kc.width = Cm(4.2); vc.width = Cm(8.5)
             _set_cell_borders(kc); _set_cell_borders(vc)
             kc.text = ""; vc.text = ""
-            # Tight paragraph spacing — no space before/after — so 14 KV rows
-            # don't eat the height budget. python-docx default spacing is
-            # ~80 twips after each paragraph.
             for cell in (kc, vc):
                 p_pPr = cell.paragraphs[0]._element.get_or_add_pPr()
                 p_spacing = OxmlElement("w:spacing")
                 p_spacing.set(qn("w:before"), "0")
                 p_spacing.set(qn("w:after"), "0")
-                p_spacing.set(qn("w:line"), "240")  # single line height
+                p_spacing.set(qn("w:line"), "240")
                 p_spacing.set(qn("w:lineRule"), "auto")
                 p_pPr.append(p_spacing)
             kr = kc.paragraphs[0].add_run(k)
-            kr.font.bold = True; kr.font.size = Pt(8); kr.font.color.rgb = PRIMARY
+            kr.font.bold = True; kr.font.size = Pt(8.5); kr.font.color.rgb = PRIMARY
             vr = vc.paragraphs[0].add_run(v)
-            vr.font.size = Pt(8); vr.font.color.rgb = TEXT
+            vr.font.size = Pt(8.5); vr.font.color.rgb = TEXT
         # Remove the empty placeholder paragraph python-docx added inside the host cell.
         if host_cell.paragraphs and not host_cell.paragraphs[0].text:
             p_elem = host_cell.paragraphs[0]._element
@@ -375,51 +374,61 @@ add_two_column_kv(
     ],
 )
 
-# Round 4 (Anna 2026-05-18): Plot deutlich größer. Statt side-by-side mit der
-# Rohdaten-Tabelle steht die Tabelle jetzt full-width schmal über dem
-# full-width Plot. So bekommt der Plot ~25 cm Breite statt 13 cm und wirkt
-# als primäres visuelles Element der Seite — Anna explizit: "Grafikgröße
-# hat Vorrang vor der starren Annahme, dass die Grafik zwingend auf Seite 2
-# bleiben muss". Wenn das 5-Seiten-Budget bricht, ist der Fallback Variante 2
-# (Plot rückt auf Seite 3).
-# Eine kombinierte Überschrift statt zwei separaten — spart vertikale
-# Höhe, die wir für den größeren Plot brauchen. e2e-Test erwartet sowohl
-# "Rohdaten" als auch "Diagramm" als Anker auf Seite 2.
+# Round 4 follow-up (Anna 2026-05-18, screenshot feedback): zurück zum
+# side-by-side Layout von Round 3 — der full-width-Plot der ersten
+# Round-4-Variante hat die Seitenmitte horizontal überfüllt aber vertikal
+# weiterhin gedrückt. Side-by-side teilt sich die Breite und gibt dem Plot
+# nach unten beliebig viel vertikalen Raum, bis das KV-Block-Ende
+# erreicht ist. Mit figsize (10, 6.5) wird der Plot jetzt rund 8.5 cm hoch
+# statt 4 cm — die Linien haben deutlich mehr vertikale Auflösung.
 heading("Rohdaten der Teststufen & Diagramm", level=3, size_pt=11)
-raw = doc.add_table(rows=4, cols=5)
-raw.autofit = False
-raw.alignment = WD_ALIGN_PARAGRAPH.CENTER
-raw_widths = [2.4, 5.3, 5.3, 6.3, 3.7]   # ~23 cm gesamt, kompakt
-for i, w in enumerate(raw_widths):
-    for r in raw.rows:
+side = doc.add_table(rows=1, cols=2)
+side.autofit = False
+left = side.cell(0, 0); left.width = Cm(13.0)
+right = side.cell(0, 1); right.width = Cm(13.5)
+_set_cell_no_borders(left); _set_cell_no_borders(right)
+
+# Left cell: Rohdaten table.
+left_para = left.paragraphs[0]
+left_para.text = ""
+inner = left.add_table(rows=4, cols=5)
+inner.autofit = False
+header_widths = [1.6, 2.6, 3.0, 3.0, 2.0]
+for i, w in enumerate(header_widths):
+    for r in inner.rows:
         r.cells[i].width = Cm(w)
-raw_headers = ["Stufe", "{{ x_axis_label }}", "HF (bpm)", "Laktat (mmol/l)", "RPE (0-10)"]
-for i, h in enumerate(raw_headers):
-    c = raw.cell(0, i)
+inner_headers = ["Stufe", "{{ x_axis_label }}", "HF (bpm)", "Laktat (mmol/l)", "RPE (0-10)"]
+for i, h in enumerate(inner_headers):
+    c = inner.cell(0, i)
     c.text = ""
     _set_cell_bg(c, "0B2545"); _set_cell_borders(c, "0B2545")
     c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run(h); run.font.bold = True; run.font.size = Pt(8.5); run.font.color.rgb = WHITE
-raw.cell(1, 0).text = ""
-raw.cell(1, 0).paragraphs[0].add_run("{%tr for s in steps_display %}")
+inner.cell(1, 0).text = ""
+inner.cell(1, 0).paragraphs[0].add_run("{%tr for s in steps_display %}")
 row_tpl = ["{{ s.stufe }}", "{{ s.intensitaet }}", "{{ s.herzfrequenz_bpm }}",
            "{{ s.laktat_mmol }}", "{{ s.rpe }}"]
 for i, tpl in enumerate(row_tpl):
-    c = raw.cell(2, i)
+    c = inner.cell(2, i)
     c.text = ""
     _set_cell_borders(c)
     c.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     p = c.paragraphs[0]; p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run(tpl); run.font.size = Pt(8.5); run.font.color.rgb = TEXT
-raw.cell(3, 0).text = ""
-raw.cell(3, 0).paragraphs[0].add_run("{%tr endfor %}")
+inner.cell(3, 0).text = ""
+inner.cell(3, 0).paragraphs[0].add_run("{%tr endfor %}")
+# Remove the placeholder paragraph python-docx leaves before the inner table.
+if left.paragraphs and not left.paragraphs[0].text:
+    pe = left.paragraphs[0]._element
+    pe.getparent().remove(pe)
 
-# Plot full-width, zentriert, direkt unter der kombinierten
-# Rohdaten/Diagramm-Überschrift.
-plot_p = doc.add_paragraph()
-plot_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-plot_p.add_run("{{ diagram }}")
+# Right cell: plot — wird in src/ld/report.py mit InlineImage(width=_PLOT_WIDTH_CM)
+# eingefügt. Höhe ergibt sich aus figsize-Aspect in plots.py.
+right_para = right.paragraphs[0]
+right_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+right_para.text = ""
+right_para.add_run("{{ diagram }}")
 
 
 # ── PAGE 3: Analyse (Pivot + Zonen) ─────────────────────────────────────────
@@ -541,7 +550,13 @@ def _build_footer(section, *, primary_color: RGBColor = PRIMARY) -> None:
     table = footer.add_table(rows=1, cols=3, width=Cm(26.5))
     table.autofit = False
     cells = table.rows[0].cells
-    cells[0].width = Cm(12.0); cells[1].width = Cm(8.0); cells[2].width = Cm(6.5)
+    # Round 4 follow-up (Anna 2026-05-18, screenshot feedback): die alte
+    # 12/8/6.5-Aufteilung hat die mittlere Zelle bei ~17.6 cm vom linken
+    # Seitenrand zentriert — die echte Seitenmitte liegt aber bei 14.85 cm
+    # (29.7 / 2). Symmetrische Zellen (9.25 / 8 / 9.25) → Mittelzelle wirklich
+    # auf Seitenmitte → Seitenzahl wirklich mittig. Kontaktinfo links und
+    # Logo rechts haben in 9.25 cm reichlich Platz.
+    cells[0].width = Cm(9.25); cells[1].width = Cm(8.0); cells[2].width = Cm(9.25)
     for c in cells:
         _set_cell_no_borders(c)
 
