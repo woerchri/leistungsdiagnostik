@@ -101,8 +101,9 @@ def test_reference_renders_to_five_pages(tmp_path):
     # page. The page-count test alone passed even when the plot was on Page 3
     # instead of Page 2 (Round 2 audit caught this).
     texts = _per_page_text(pdf)
-    assert "Leistungsdiagnostik" in texts[0] and "Sport AnnaLytics" in texts[0], \
-        "Page 1 must be the cover with the brand subtext"
+    # Round 4 follow-up (Anna 2026-05-18): "Sport AnnaLytics"-Subtext entfernt.
+    # Cover-Anker ist jetzt nur noch der Titel + Athletenname.
+    assert "Leistungsdiagnostik" in texts[0], "Page 1 must be the cover with the title"
     assert "Daten & Testablauf" in texts[1], "Page 2 must hold the data block"
     assert "Rohdaten" in texts[1], "Page 2 must hold the Rohdaten table"
     # Plot is an inline image — extracted text excludes it, but the section

@@ -287,7 +287,9 @@ def add_2x2_grid(quadrants: list[tuple[str, str]]) -> None:
 
 
 # ── PAGE 1: Deckblatt ────────────────────────────────────────────────────────
-# Round 2: airy cover, Anna-Maria-line removed, Sport-AnnaLytics-Subtext added.
+# Round 2: airy cover, Anna-Maria-line removed.
+# Round 4 follow-up (Anna 2026-05-18): "Sport AnnaLytics"-Subtext entfernt —
+# Logo + Titel + Name reichen, kein zusätzliches Branding-Sublabel.
 for _ in range(2):
     doc.add_paragraph()
 
@@ -303,12 +305,6 @@ title_p = doc.add_paragraph()
 title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 title_run = title_p.add_run("Leistungsdiagnostik {{ athlete.sportart_label }}")
 title_run.font.size = Pt(32); title_run.font.bold = True; title_run.font.color.rgb = PRIMARY
-
-brand_p = doc.add_paragraph()
-brand_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-brand_run = brand_p.add_run("Sport AnnaLytics")
-brand_run.font.size = Pt(13); brand_run.font.color.rgb = ACCENT
-brand_run.font.italic = False
 
 for _ in range(2):
     doc.add_paragraph()
